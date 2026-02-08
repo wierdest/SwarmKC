@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwarmKC", "SwarmKC.csproj", "{EA68D955-E21D-77A5-A840-C99F4DE1D029}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EA68D955-E21D-77A5-A840-C99F4DE1D029}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA68D955-E21D-77A5-A840-C99F4DE1D029}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA68D955-E21D-77A5-A840-C99F4DE1D029}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA68D955-E21D-77A5-A840-C99F4DE1D029}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4B7F6976-5543-4EF9-A6AE-EE7E65A48448}
+	EndGlobalSection
+EndGlobal

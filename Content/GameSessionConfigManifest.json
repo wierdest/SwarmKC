@@ -1,0 +1,45 @@
+{
+  "ActiveIndex": null,
+  "Entries": [
+    {
+      "Name": "Config A",
+      "File": "GameSessionConfigs/Config_A.json",
+      "Completed": false
+    },
+    {
+      "Name": "Config B",
+      "File": "GameSessionConfigs/Config_B.json",
+      "Completed": false
+    },
+    {
+      "Name": "Config C",
+      "File": "GameSessionConfigs/Config_C.json",
+      "Completed": false
+    },
+    {
+      "Name": "Config D",
+      "File": "GameSessionConfigs/Config_D.json",
+      "Completed": false
+    },
+    {
+      "Name": "Config E",
+      "File": "GameSessionConfigs/Config_E.json",
+      "Completed": false
+    },
+    {
+      "Name": "Config F",
+      "File": "GameSessionConfigs/Config_F.json",
+      "Completed": false
+    },
+    {
+      "Name": "Config G",
+      "File": "GameSessionConfigs/Config_G.json",
+      "Completed": false
+    },
+     {
+      "Name": "Config H",
+      "File": "GameSessionConfigs/Config_H.json",
+      "Completed": false
+    }
+  ]
+}
