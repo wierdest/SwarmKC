@@ -2,7 +2,7 @@ using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace SwarmKC.UI;
+namespace SwarmKC.UI.Components;
 
 public class ProgressBar(Rectangle bounds, float value = 0f, bool indeterminate = false, bool reversed = false)
 {

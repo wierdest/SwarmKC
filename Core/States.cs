@@ -1,4 +1,4 @@
-namespace SwarmKC.Enums;
+namespace SwarmKC.Core;
 
 public enum States
 {

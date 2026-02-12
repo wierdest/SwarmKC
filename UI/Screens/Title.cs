@@ -1,7 +1,8 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using SwarmKC.Input;
+using SwarmKC.Common;
+using SwarmKC.UI.Components;
 
 namespace SwarmKC.UI.Screens;
 

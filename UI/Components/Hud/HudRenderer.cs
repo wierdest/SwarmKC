@@ -2,7 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Swarm.Application.Contracts;
 
-namespace SwarmKC.Renderers.Hud;
+namespace SwarmKC.UI.Components.Hud;
 
 public class HudRenderer(
     SpriteBatch spriteBatch,

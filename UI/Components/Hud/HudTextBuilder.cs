@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using Swarm.Application.Contracts;
 
-namespace SwarmKC.Renderers.Hud;
+namespace SwarmKC.UI.Components.Hud;
 
 public static class HudTextBuilder
 {
