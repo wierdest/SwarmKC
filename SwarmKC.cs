@@ -6,11 +6,11 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Swarm.Application.Contracts;
-using SwarmKC.Enums;
-using SwarmKC.Input;
-using SwarmKC.Renderers;
-using SwarmKC.Renderers.Hud;
+using SwarmKC.Core;
+using SwarmKC.Core.Session;
+using SwarmKC.Core.Session.Renderers;
 using SwarmKC.UI;
+using SwarmKC.UI.Components.Hud;
 using SwarmKC.UI.Screens;
 
 namespace SwarmKC;
@@ -29,7 +29,7 @@ public class SwarmKC : Game
     private readonly float _moveSpeed = 360f;
     private HudRenderer _hud = null!;
     private SpriteFont _font = null!;
-    private readonly InputManager _input;
+    private readonly GameSessionControlsManager _input;
     private string? _gameConfigJson;
     private bool _manifestSaved;
     private RenderTarget2D _renderTarget = null!;
@@ -47,7 +47,7 @@ public class SwarmKC : Game
         _graphics.PreferredBackBufferHeight = (int)HEIGHT;
         _service = service;
         _configSource = configSource ?? throw new ArgumentNullException(nameof(configSource));
-        _input = new InputManager();
+        _input = new GameSessionControlsManager();
         _graphics.IsFullScreen = true;
         _graphics.ApplyChanges();
 

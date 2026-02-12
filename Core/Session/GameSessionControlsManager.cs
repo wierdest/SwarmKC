@@ -2,10 +2,11 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Swarm.Application.DTOs;
+using SwarmKC.Common;
 
-namespace SwarmKC.Input;
+namespace SwarmKC.Core.Session;
 
-public sealed class InputManager
+public sealed class GameSessionControlsManager
 {
     private KeyboardState _prevKb;
     private MouseState _prevMouse;

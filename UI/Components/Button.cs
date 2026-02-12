@@ -1,7 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace SwarmKC.UI;
+namespace SwarmKC.UI.Components;
 
 public sealed class Button(string text, Rectangle bounds)
 {

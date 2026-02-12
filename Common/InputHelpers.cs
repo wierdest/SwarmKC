@@ -1,6 +1,6 @@
 using Microsoft.Xna.Framework.Input;
 
-namespace SwarmKC.Input;
+namespace SwarmKC.Common;
 
 public static class InputHelpers
 {
