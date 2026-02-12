@@ -15,7 +15,7 @@ public sealed class InputManager
     private Vector2 _smoothedRightStick = Vector2.Zero;
     private const float _aimSmoothness = 0.2f;
 
-    public InputStateDTO Update()
+    public GameSessionControlsDTO Update()
     {
         var kb = Keyboard.GetState();
         var mouse = Mouse.GetState();
@@ -31,9 +31,9 @@ public sealed class InputManager
         dy -= pad.ThumbSticks.Left.Y;
 
         bool firePressed =
-            JustPressed(Keys.Space, kb, _prevKb) ||
+            InputHelpers.JustPressed(Keys.Space, kb, _prevKb) ||
             (mouse.LeftButton == ButtonState.Pressed && _prevMouse.LeftButton == ButtonState.Released) ||
-            JustPressed(Buttons.RightTrigger, pad, _prevPad);
+            InputHelpers.JustPressed(Buttons.RightTrigger, pad, _prevPad);
 
         bool fireHeld =
             kb.IsKeyDown(Keys.Space) ||
@@ -41,32 +41,32 @@ public sealed class InputManager
             pad.Triggers.Right > 0.3f;
 
         bool dropBomb =
-              JustPressed(Keys.Q, kb, _prevKb) ||
-              JustPressed(Buttons.A, pad, _prevPad);
+              InputHelpers.JustPressed(Keys.Q, kb, _prevKb) ||
+              InputHelpers.JustPressed(Buttons.A, pad, _prevPad);
 
         bool reload =
-              JustPressed(Keys.E, kb, _prevKb) ||
-              JustPressed(Buttons.X, pad, _prevPad);
+              InputHelpers.JustPressed(Keys.E, kb, _prevKb) ||
+              InputHelpers.JustPressed(Buttons.X, pad, _prevPad);
 
         bool pause =
-            JustPressed(Keys.P, kb, _prevKb) ||
-            JustPressed(Buttons.Start, pad, _prevPad);
+            InputHelpers.JustPressed(Keys.P, kb, _prevKb) ||
+            InputHelpers.JustPressed(Buttons.Start, pad, _prevPad);
 
         bool next =
-            JustPressed(Keys.R, kb, _prevKb) ||
-            JustPressed(Buttons.Y, pad, _prevPad);
+            InputHelpers.JustPressed(Keys.R, kb, _prevKb) ||
+            InputHelpers.JustPressed(Buttons.Y, pad, _prevPad);
 
         bool replay =
-            JustPressed(Keys.F6, kb, _prevKb) ||
-            JustPressed(Buttons.LeftShoulder, pad, _prevPad);
+            InputHelpers.JustPressed(Keys.F6, kb, _prevKb) ||
+            InputHelpers.JustPressed(Buttons.LeftShoulder, pad, _prevPad);
         
         bool reset =
-            JustPressed(Keys.F8, kb, _prevKb) ||
-            JustPressed(Buttons.RightShoulder, pad, _prevPad);
+            InputHelpers.JustPressed(Keys.F8, kb, _prevKb) ||
+            InputHelpers.JustPressed(Buttons.RightShoulder, pad, _prevPad);
         
-        bool navigateNextConfig = JustPressed(Keys.F10, kb, _prevKb);
+        bool navigateNextConfig = InputHelpers.JustPressed(Keys.F10, kb, _prevKb);
 
-        bool navigatePrevConfig = JustPressed(Keys.F9, kb, _prevKb);
+        bool navigatePrevConfig = InputHelpers.JustPressed(Keys.F9, kb, _prevKb);
 
             
         if (pad.IsConnected)
@@ -88,7 +88,7 @@ public sealed class InputManager
             }
         }
 
-        var state = new InputStateDTO(
+        var state = new GameSessionControlsDTO(
             dx,
             dy,
             mouse.X,
@@ -115,7 +115,5 @@ public sealed class InputManager
 
         return state;
     }
-    private static bool JustPressed(Keys key, KeyboardState current, KeyboardState prev)  => current.IsKeyDown(key) && !prev.IsKeyDown(key);
-    private static bool JustPressed(Buttons button, GamePadState current, GamePadState prev) => current.IsButtonDown(button) && !prev.IsButtonDown(button);
 
 }

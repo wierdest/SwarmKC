@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Swarm.Application.Contracts;
+using SwarmKC.Enums;
 using SwarmKC.Input;
 using SwarmKC.Renderers;
 using SwarmKC.Renderers.Hud;
+using SwarmKC.UI;
+using SwarmKC.UI.Screens;
 
 namespace SwarmKC;
 
@@ -16,6 +20,11 @@ public class SwarmKC : Game
     private readonly GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch = null!;
     private readonly IGameSessionService _service;
+    private States _state = States.TITLE;
+    private Title _titleScreen = null!;
+    private Loading _loadingScreen = null!;
+    private Task? _sessionLoadTask;
+    private Exception? _loadError;
     private readonly Dictionary<int, Texture2D> _circleCache = new();
     private readonly float _moveSpeed = 360f;
     private HudRenderer _hud = null!;
@@ -34,7 +43,6 @@ public class SwarmKC : Game
     {
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
-        IsMouseVisible = false;
         _graphics.PreferredBackBufferWidth = (int)WIDTH;
         _graphics.PreferredBackBufferHeight = (int)HEIGHT;
         _service = service;
@@ -69,34 +77,100 @@ public class SwarmKC : Game
     protected override void Initialize()
     {
         Window.ClientSizeChanged += (_, __) => RecalculateDestination();
-        _gameConfigJson = _configSource.LoadConfigJson(Content.RootDirectory);
-        _manifestSaved = false;
-        _service.StartNewSession(_gameConfigJson).GetAwaiter().GetResult();
-
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-
         base.Initialize();
     }
 
     protected override void LoadContent()
     {
-
         _font = Content.Load<SpriteFont>("DefaultFont");
+
+        _titleScreen = new Title(_font, GraphicsDevice);
+        _loadingScreen = new Loading(_font, GraphicsDevice);
 
         _hud = new HudRenderer(_spriteBatch, _font, GraphicsDevice);
 
         _crosshairRenderer = new CrosshairRenderer(_spriteBatch, GraphicsDevice);
 
         _renderTarget = new RenderTarget2D(GraphicsDevice, (int) WIDTH, (int) HEIGHT);
+        
+        SetState(States.TITLE);
 
         RecalculateDestination();
 
         base.LoadContent();
     }
 
+    private void SetState(States next)
+    {
+        _state = next;
+        IsMouseVisible = next == States.TITLE || next == States.LOADING;
+    }
+
+    private void BeginSessionLoad()
+    {
+        _sessionLoadTask = null;
+        _loadError = null;
+        _gameConfigJson = _configSource.LoadConfigJson(Content.RootDirectory);
+        _manifestSaved = false;
+
+        _loadingScreen.Begin("Loading session config...");
+        _sessionLoadTask = Task.Run(() => _service.StartNewSession(_gameConfigJson!).GetAwaiter().GetResult());
+    }
+
     private bool IsSessionReady() => _service != null && _service.HasSession;
     
     protected override void Update(GameTime gameTime)
+    {
+        if (Keyboard.GetState().IsKeyDown(Keys.Escape) && _state == States.TITLE)
+            Exit();
+        
+        switch (_state)
+        {
+            case States.TITLE:
+                _titleScreen.Update();
+
+                if (_titleScreen.QuitRequested)
+                {
+                    Exit();
+                    return;
+                }
+
+                if (_titleScreen.GoToLoadingRequested)
+                {
+                    _titleScreen.ResetFlags();
+                    BeginSessionLoad();
+                    SetState(States.LOADING);
+                }
+                return;
+
+            case States.LOADING:
+                bool backendFinished = _sessionLoadTask is { IsCompleted: true };
+
+                if (backendFinished && _sessionLoadTask!.IsFaulted)
+                {
+                    _loadError = _sessionLoadTask.Exception;
+                    _titleScreen.ResetFlags();
+                    SetState(States.TITLE);
+                    return;
+                }
+
+                _loadingScreen.Update(gameTime, backendFinished && _loadError is null);
+
+                if (_loadingScreen.IsCompleted)
+                    SetState(States.PLAYING);
+
+                return;
+
+            case States.PLAYING:
+                UpdatePlaying(gameTime); // move your current gameplay Update body here
+                return;
+        }
+
+        base.Update(gameTime);
+    }
+
+    private void UpdatePlaying(GameTime gameTime)
     {
         if (_service is null) return;
 
@@ -177,13 +251,37 @@ public class SwarmKC : Game
         var dt = MathF.Min((float)gameTime.ElapsedGameTime.TotalSeconds, 0.05f);
 
         if (dt > 0f) _service.Tick(dt);
-
-        base.Update(gameTime);
     }
 
     protected override void Draw(GameTime gameTime)
     {
-        if (!IsSessionReady()) 
+        switch (_state)
+        {
+            case States.TITLE:
+                GraphicsDevice.Clear(Theme.Background);
+                _spriteBatch.Begin();
+                _titleScreen.Draw(_spriteBatch, Pixel);
+                _spriteBatch.End();
+                return;
+
+            case States.LOADING:
+                GraphicsDevice.Clear(Theme.Background);
+                _spriteBatch.Begin();
+                _loadingScreen.Draw(_spriteBatch, Pixel, gameTime);
+                _spriteBatch.End();
+                return;
+
+            case States.PLAYING:
+                DrawPlaying();
+                return;
+        }
+       
+        base.Draw(gameTime);
+    }
+
+    private void DrawPlaying()
+    {
+         if (!IsSessionReady()) 
         {
             GraphicsDevice.Clear(Color.Black);
             return;
@@ -302,8 +400,6 @@ public class SwarmKC : Game
 
         _crosshairRenderer.Draw(snap.AimPositionX, snap.AimPositionY);
         _spriteBatch.End();
-
-        base.Draw(gameTime);
     }
 
     private static Color GetColorForNonPlayerEntityType(string type)
