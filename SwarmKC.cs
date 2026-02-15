@@ -1,10 +1,8 @@
 ﻿using System;
-using System.IO;
-using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Swarm.Application.Contracts;
+using SwarmKC.Common;
 using SwarmKC.Common.Graphics;
 using SwarmKC.Core;
 using SwarmKC.Core.Session;
@@ -17,42 +15,37 @@ namespace SwarmKC;
 public class SwarmKC : Game
 { 
     private readonly GraphicsDeviceManager _graphics;
-    private PixelTexture _pixelTexture = null!;
+    private readonly GameSessionManager _sessionManager;
+    private int _appliedPresentationVersion = -1;
+
     private SpriteBatch _spriteBatch = null!;
-    private readonly IGameSessionService _service;
-    private States _state = States.TITLE;
+    private PixelTexture _pixelTexture = null!;
+    private SpriteFont _font = null!;
+
     private Title _titleScreen = null!;
     private Loading _loadingScreen = null!;
-    private Task? _sessionLoadTask;
-    private Exception? _loadError;
-    private readonly float _moveSpeed = 360f;
-    private SpriteFont _font = null!;
-    private readonly GameSessionControlsManager _input;
-    private string? _gameConfigJson;
-    private bool _manifestSaved;
-    private readonly float WIDTH = 960f;
-    private readonly float HEIGHT = 540f;
-    private readonly int BORDER = 40;
     private GameSessionRenderer _gameSessionRenderer = null!;
-    private readonly IGameSessionConfigSource _configSource;
-    public SwarmKC(IGameSessionService service, IGameSessionConfigSource configSource)
+
+    private States _state = States.TITLE;
+
+    private KeyboardState _prevKb;
+
+    public SwarmKC(GameSessionManager sessionManager)
     {
         Content.RootDirectory = "Content";
-        _graphics = new GraphicsDeviceManager(this)
-        {
-            PreferredBackBufferWidth = (int)WIDTH,
-            PreferredBackBufferHeight = (int)HEIGHT
-        };
-        _service = service;
-        _configSource = configSource ?? throw new ArgumentNullException(nameof(configSource));
-        _input = new GameSessionControlsManager();
-        _graphics.IsFullScreen = true;
-        _graphics.ApplyChanges();
-
+        _sessionManager = sessionManager ?? throw new ArgumentNullException(nameof(sessionManager));
+        _graphics = new GraphicsDeviceManager(this);
     }
     
     protected override void Initialize()
     {
+        _sessionManager.LoadActiveConfig(Content.RootDirectory);
+
+        _graphics.PreferredBackBufferWidth = (int)_sessionManager.StageWidth;
+        _graphics.PreferredBackBufferHeight = (int)_sessionManager.StageHeight;
+        _graphics.IsFullScreen = true;
+        _graphics.ApplyChanges();
+
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         base.Initialize();
     }
@@ -60,48 +53,30 @@ public class SwarmKC : Game
     protected override void LoadContent()
     {
         _font = Content.Load<SpriteFont>("DefaultFont");
-
         _pixelTexture = new PixelTexture(GraphicsDevice);
 
         _titleScreen = new Title(_font, GraphicsDevice);
-
         _loadingScreen = new Loading(_font, GraphicsDevice);
-
-        _gameSessionRenderer = new GameSessionRenderer(_spriteBatch, GraphicsDevice, _font, _pixelTexture, WIDTH, HEIGHT, BORDER);
         
-        _gameSessionRenderer.Initialize();
+        Window.ClientSizeChanged += (_, __) => _gameSessionRenderer?.OnViewportChanged();
         
-        Window.ClientSizeChanged += (_, __) => _gameSessionRenderer.OnViewportChanged();
-
         SetState(States.TITLE);
+
+        TryApplySessionPresentationConfig();
 
         base.LoadContent();
     }
 
-    private void SetState(States next)
-    {
-        _state = next;
-        IsMouseVisible = next == States.TITLE || next == States.LOADING;
-    }
-
     private void BeginSessionLoad()
     {
-        _sessionLoadTask = null;
-        _loadError = null;
-        _gameConfigJson = _configSource.LoadConfigJson(Content.RootDirectory);
-        _manifestSaved = false;
-
         _loadingScreen.Begin("Loading session config...");
-        _sessionLoadTask = Task.Run(() => _service.StartNewSession(_gameConfigJson!).GetAwaiter().GetResult());
+        _sessionManager.BeginLoad(Content.RootDirectory);
     }
-
-    private bool IsSessionReady() => _service != null && _service.HasSession;
     
     protected override void Update(GameTime gameTime)
     {
-        if (Keyboard.GetState().IsKeyDown(Keys.Escape) && _state == States.TITLE)
-            Exit();
-        
+        if (HandleGlobalEsc()) return;
+
         switch (_state)
         {
             case States.TITLE:
@@ -122,111 +97,35 @@ public class SwarmKC : Game
                 return;
 
             case States.LOADING:
-                bool backendFinished = _sessionLoadTask is { IsCompleted: true };
+                _sessionManager.PollLoad();
 
-                if (backendFinished && _sessionLoadTask!.IsFaulted)
+                if (_sessionManager.HasLoadError)
                 {
-                    _loadError = _sessionLoadTask.Exception;
                     _titleScreen.ResetFlags();
                     SetState(States.TITLE);
                     return;
                 }
-
-                _loadingScreen.Update(gameTime, backendFinished && _loadError is null);
+                
+                _loadingScreen.Update(gameTime, _sessionManager.IsLoadCompleted);
 
                 if (_loadingScreen.IsCompleted)
+                {
+                    TryApplySessionPresentationConfig();
                     SetState(States.PLAYING);
-
+                }
                 return;
 
             case States.PLAYING:
-                UpdatePlaying(gameTime); // move your current gameplay Update body here
+            {
+                var dt = MathF.Min((float)gameTime.ElapsedGameTime.TotalSeconds, 0.05f);
+                _sessionManager.UpdatePlaying(dt, Content.RootDirectory);
+                TryApplySessionPresentationConfig();
                 return;
+            }
+      
         }
 
         base.Update(gameTime);
-    }
-    private void UpdatePlaying(GameTime gameTime)
-    {
-        if (_service is null) return;
-
-        if (!IsSessionReady())
-            return;
-
-        var kb = Keyboard.GetState();
-        if (kb.IsKeyDown(Keys.Escape)) Exit();
-
-        var snap = _service.GetSnapshot();
-
-        var state = _input.Update();
-
-        if (state.Reset)
-        {
-            ResetManifestProgress();
-            _gameConfigJson = _configSource.LoadConfigJson(Content.RootDirectory);
-            _manifestSaved = false;
-            _service.Restart(_gameConfigJson!);
-            return;
-        }
-
-        if (state.NavigateNextConfig || state.NavgatePrevConfig)
-        {
-            NavigateConfig(state.NavigateNextConfig ? 1 : -1);
-            return;
-        }
-        
-        if (state.Replay)
-        {
-            if (!string.IsNullOrWhiteSpace(_gameConfigJson))
-                _service.Restart(_gameConfigJson);
-            return;
-        }
-
-        if (state.Pause)
-        {
-            if (snap.IsPaused)
-                _service.Resume();
-            else
-                _service.Pause();
-
-            snap = _service.GetSnapshot();
-        }
-
-        if (snap.IsPaused || snap.IsTimeUp || snap.IsCompleted || snap.IsInterrupted)
-        {
-            if (snap.IsCompleted && !_manifestSaved)
-            {
-                var manifest = _configSource.LoadManifest(Content.RootDirectory);
-                var index = _configSource.SelectEntryIndex(manifest);
-                if (index >= 0 && index < manifest.Entries.Count)
-                {
-                    manifest.Entries[index].Completed = true;
-                    _configSource.SaveManifest(Content.RootDirectory, manifest);
-                }
-                _manifestSaved = true;
-            }
-            if (state.Next)
-            {
-                _gameConfigJson = _configSource.LoadConfigJson(Content.RootDirectory);
-                _manifestSaved = false;
-                _service.Restart(_gameConfigJson!);
-            }
-            return;
-        }
-
-        _service.ApplyInput(state.DirX, state.DirY, (state.DirX == 0f && state.DirY == 0f) ? 0f : _moveSpeed);
-
-        _service.Fire(state.FirePressed, state.FireHeld);
-
-        if (state.DropBomb) _service.DropBomb();
-
-        if (state.Reload) _service.Reload();
-
-        _service.RotateTowards(state.MouseX, state.MouseY, state.AimRadians, state.AimMagnitude);
-
-        var dt = MathF.Min((float)gameTime.ElapsedGameTime.TotalSeconds, 0.05f);
-
-        if (dt > 0f) _service.Tick(dt);
     }
 
     protected override void Draw(GameTime gameTime)
@@ -248,59 +147,91 @@ public class SwarmKC : Game
                 return;
 
             case States.PLAYING:
-                if (!IsSessionReady())
+                if (!_sessionManager.HasSession)
                 {
                     GraphicsDevice.Clear(Color.Black);
                     return;
                 }
-                _gameSessionRenderer.Draw(_service.GetSnapshot());
+
+                _gameSessionRenderer.Draw(_sessionManager.GetSnapshot());
                 return;
         }
        
         base.Draw(gameTime);
     }
 
-
-    private void ResetManifestProgress()
+    private void TryApplySessionPresentationConfig()
     {
-        var manifest = _configSource.LoadManifest(Content.RootDirectory);
-        manifest.ActiveIndex = null;
-        for (int i = 0; i < manifest.Entries.Count; i++)
+        if (_appliedPresentationVersion == _sessionManager.PresentationConfigVersion)
+            return;
+
+        ApplySessionPresentationConfig();
+        _appliedPresentationVersion = _sessionManager.PresentationConfigVersion;
+    }
+
+    private void ApplySessionPresentationConfig()
+    {
+        int w = (int)_sessionManager.StageWidth;
+        int h = (int)_sessionManager.StageHeight;
+
+        if (_graphics.PreferredBackBufferWidth != w || _graphics.PreferredBackBufferHeight != h)
         {
-            manifest.Entries[i].Completed = false;
+            _graphics.PreferredBackBufferWidth = w;
+            _graphics.PreferredBackBufferHeight = h;
+            _graphics.ApplyChanges();
         }
-        _configSource.SaveManifest(Content.RootDirectory, manifest);
+
+        CreateOrRecreateSessionRenderer();
     }
 
-    private void NavigateConfig(int delta)
+    private void CreateOrRecreateSessionRenderer()
     {
-        var manifest = _configSource.LoadManifest(Content.RootDirectory);
-        if (manifest.Entries.Count == 0) return;
+        _gameSessionRenderer = new GameSessionRenderer(
+            _spriteBatch,
+            GraphicsDevice,
+            _font,
+            _pixelTexture,
+            _sessionManager.StageWidth,
+            _sessionManager.StageHeight,
+            _sessionManager.BorderSize);
 
-        int currentIndex = manifest.ActiveIndex is int idx && idx >= 0 && idx < manifest.Entries.Count
-            ? idx
-            : _configSource.SelectEntryIndex(manifest);
-
-        int nextIndex = (currentIndex + delta) % manifest.Entries.Count;
-        if (nextIndex < 0) nextIndex += manifest.Entries.Count;
-
-        manifest.ActiveIndex = nextIndex;
-        _configSource.SaveManifest(Content.RootDirectory, manifest);
-
-        _gameConfigJson = LoadConfigJsonFromManifestEntry(manifest, nextIndex);
-        _manifestSaved = false;
-        _service.Restart(_gameConfigJson!);
+        _gameSessionRenderer.Initialize();
     }
 
-    private string LoadConfigJsonFromManifestEntry(GameSessionConfigManifest manifest, int index)
+    private void SetState(States next)
     {
-        var entry = manifest.Entries[index];
-        if (string.IsNullOrWhiteSpace(entry.File))
-            throw new InvalidOperationException("Manifest entry must include a file path.");
+        _state = next;
+        IsMouseVisible = next == States.TITLE || next == States.LOADING;
+    }
 
-        var contentRoot = Path.Combine(AppContext.BaseDirectory, Content.RootDirectory);
-        var configPath = Path.Combine(contentRoot, entry.File);
-        return File.ReadAllText(configPath);
+    private bool HandleGlobalEsc()
+    {
+        var kb = Keyboard.GetState();
+        bool escPressed = InputHelpers.JustPressed(Keys.Escape, kb, _prevKb);
+        _prevKb = kb;
+
+        if (!escPressed) return false;
+
+        if (_state == States.PLAYING)
+        {
+            _titleScreen.ResetFlags();
+            SetState(States.TITLE);
+            return true;
+        }
+
+        if (_state == States.LOADING)
+        {
+            SetState(States.TITLE);
+            return true;
+        }
+
+        if (_state == States.TITLE)
+        {
+            Exit();
+            return true;
+        }
+
+        return false;
     }
 
 }
