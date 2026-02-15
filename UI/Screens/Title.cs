@@ -40,7 +40,7 @@ public sealed class Title(SpriteFont font, GraphicsDevice graphicsDevice)
 
         GoToLoadingRequested = _start.Update(mouse.Position, down, clicked) || InputHelpers.JustPressed(Keys.Enter, kb, _prevKb);
 
-        QuitRequested = _quit.Update(mouse.Position, down, clicked) || InputHelpers.JustPressed(Keys.Escape, kb, _prevKb);
+        QuitRequested = _quit.Update(mouse.Position, down, clicked);
 
         _prevKb = kb;
         _prevMouse = mouse;
