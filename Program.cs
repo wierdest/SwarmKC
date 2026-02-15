@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Swarm.Application.Extensions;
 using Swarm.Infrastructure.Extensions;
+using SwarmKC.Core.Session;
 
 namespace SwarmKC;
 class Program
@@ -21,6 +22,7 @@ class Program
         
         services.AddApplication();
         services.AddLoader();
+        services.AddSingleton<GameSessionManager>();
         services.AddSingleton<SwarmKC>();
 
         var provider = services.BuildServiceProvider();

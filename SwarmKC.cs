@@ -1,16 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Swarm.Application.Contracts;
+using SwarmKC.Common;
+using SwarmKC.Common.Graphics;
 using SwarmKC.Core;
 using SwarmKC.Core.Session;
 using SwarmKC.Core.Session.Renderers;
 using SwarmKC.UI;
-using SwarmKC.UI.Components.Hud;
 using SwarmKC.UI.Screens;
 
 namespace SwarmKC;
@@ -18,65 +15,37 @@ namespace SwarmKC;
 public class SwarmKC : Game
 { 
     private readonly GraphicsDeviceManager _graphics;
+    private readonly GameSessionManager _sessionManager;
+    private int _appliedPresentationVersion = -1;
+
     private SpriteBatch _spriteBatch = null!;
-    private readonly IGameSessionService _service;
-    private States _state = States.TITLE;
+    private PixelTexture _pixelTexture = null!;
+    private SpriteFont _font = null!;
+
     private Title _titleScreen = null!;
     private Loading _loadingScreen = null!;
-    private Task? _sessionLoadTask;
-    private Exception? _loadError;
-    private readonly Dictionary<int, Texture2D> _circleCache = new();
-    private readonly float _moveSpeed = 360f;
-    private HudRenderer _hud = null!;
-    private SpriteFont _font = null!;
-    private readonly GameSessionControlsManager _input;
-    private string? _gameConfigJson;
-    private bool _manifestSaved;
-    private RenderTarget2D _renderTarget = null!;
-    private Rectangle _drawDestination;
-    private readonly float WIDTH = 960f;
-    private readonly float HEIGHT = 540f;
-    private readonly int BORDER = 40;
-    private CrosshairRenderer _crosshairRenderer = null!;
-    private readonly IGameSessionConfigSource _configSource;
-    public SwarmKC(IGameSessionService service, IGameSessionConfigSource configSource)
+    private GameSessionRenderer _gameSessionRenderer = null!;
+
+    private States _state = States.TITLE;
+
+    private KeyboardState _prevKb;
+
+    public SwarmKC(GameSessionManager sessionManager)
     {
-        _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
-        _graphics.PreferredBackBufferWidth = (int)WIDTH;
-        _graphics.PreferredBackBufferHeight = (int)HEIGHT;
-        _service = service;
-        _configSource = configSource ?? throw new ArgumentNullException(nameof(configSource));
-        _input = new GameSessionControlsManager();
+        _sessionManager = sessionManager ?? throw new ArgumentNullException(nameof(sessionManager));
+        _graphics = new GraphicsDeviceManager(this);
+    }
+    
+    protected override void Initialize()
+    {
+        _sessionManager.LoadActiveConfig(Content.RootDirectory);
+
+        _graphics.PreferredBackBufferWidth = (int)_sessionManager.StageWidth;
+        _graphics.PreferredBackBufferHeight = (int)_sessionManager.StageHeight;
         _graphics.IsFullScreen = true;
         _graphics.ApplyChanges();
 
-    }
-    
-    private void RecalculateDestination()
-    {
-        var screenW = GraphicsDevice.PresentationParameters.BackBufferWidth;
-        var screenH = GraphicsDevice.PresentationParameters.BackBufferHeight;
-
-        // float scaleX = screenW / WIDTH;
-        // float scaleY = screenH / HEIGHT;
-        // float scale = MathF.Min(scaleX, scaleY);
-
-        // int drawW = (int)(WIDTH * scale);
-        // int drawH = (int)(HEIGHT * scale);
-
-        int drawW = (int)WIDTH;
-        int drawH = (int)HEIGHT;
-
-        int drawX = (screenW - drawW) / 2;
-        int drawY = (screenH - drawH) / 2;
-
-        _drawDestination = new Rectangle(drawX, drawY, drawW, drawH);
-    }
-
-    protected override void Initialize()
-    {
-        Window.ClientSizeChanged += (_, __) => RecalculateDestination();
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         base.Initialize();
     }
@@ -84,47 +53,30 @@ public class SwarmKC : Game
     protected override void LoadContent()
     {
         _font = Content.Load<SpriteFont>("DefaultFont");
+        _pixelTexture = new PixelTexture(GraphicsDevice);
 
         _titleScreen = new Title(_font, GraphicsDevice);
         _loadingScreen = new Loading(_font, GraphicsDevice);
-
-        _hud = new HudRenderer(_spriteBatch, _font, GraphicsDevice);
-
-        _crosshairRenderer = new CrosshairRenderer(_spriteBatch, GraphicsDevice);
-
-        _renderTarget = new RenderTarget2D(GraphicsDevice, (int) WIDTH, (int) HEIGHT);
+        
+        Window.ClientSizeChanged += (_, __) => _gameSessionRenderer?.OnViewportChanged();
         
         SetState(States.TITLE);
 
-        RecalculateDestination();
+        TryApplySessionPresentationConfig();
 
         base.LoadContent();
     }
 
-    private void SetState(States next)
-    {
-        _state = next;
-        IsMouseVisible = next == States.TITLE || next == States.LOADING;
-    }
-
     private void BeginSessionLoad()
     {
-        _sessionLoadTask = null;
-        _loadError = null;
-        _gameConfigJson = _configSource.LoadConfigJson(Content.RootDirectory);
-        _manifestSaved = false;
-
         _loadingScreen.Begin("Loading session config...");
-        _sessionLoadTask = Task.Run(() => _service.StartNewSession(_gameConfigJson!).GetAwaiter().GetResult());
+        _sessionManager.BeginLoad(Content.RootDirectory);
     }
-
-    private bool IsSessionReady() => _service != null && _service.HasSession;
     
     protected override void Update(GameTime gameTime)
     {
-        if (Keyboard.GetState().IsKeyDown(Keys.Escape) && _state == States.TITLE)
-            Exit();
-        
+        if (HandleGlobalEsc()) return;
+
         switch (_state)
         {
             case States.TITLE:
@@ -145,112 +97,35 @@ public class SwarmKC : Game
                 return;
 
             case States.LOADING:
-                bool backendFinished = _sessionLoadTask is { IsCompleted: true };
+                _sessionManager.PollLoad();
 
-                if (backendFinished && _sessionLoadTask!.IsFaulted)
+                if (_sessionManager.HasLoadError)
                 {
-                    _loadError = _sessionLoadTask.Exception;
                     _titleScreen.ResetFlags();
                     SetState(States.TITLE);
                     return;
                 }
-
-                _loadingScreen.Update(gameTime, backendFinished && _loadError is null);
+                
+                _loadingScreen.Update(gameTime, _sessionManager.IsLoadCompleted);
 
                 if (_loadingScreen.IsCompleted)
+                {
+                    TryApplySessionPresentationConfig();
                     SetState(States.PLAYING);
-
+                }
                 return;
 
             case States.PLAYING:
-                UpdatePlaying(gameTime); // move your current gameplay Update body here
+            {
+                var dt = MathF.Min((float)gameTime.ElapsedGameTime.TotalSeconds, 0.05f);
+                _sessionManager.UpdatePlaying(dt, Content.RootDirectory);
+                TryApplySessionPresentationConfig();
                 return;
+            }
+      
         }
 
         base.Update(gameTime);
-    }
-
-    private void UpdatePlaying(GameTime gameTime)
-    {
-        if (_service is null) return;
-
-        if (!IsSessionReady())
-            return;
-
-        var kb = Keyboard.GetState();
-        if (kb.IsKeyDown(Keys.Escape)) Exit();
-
-        var snap = _service.GetSnapshot();
-
-        var state = _input.Update();
-
-        if (state.Reset)
-        {
-            ResetManifestProgress();
-            _gameConfigJson = _configSource.LoadConfigJson(Content.RootDirectory);
-            _manifestSaved = false;
-            _service.Restart(_gameConfigJson!);
-            return;
-        }
-
-        if (state.NavigateNextConfig || state.NavgatePrevConfig)
-        {
-            NavigateConfig(state.NavigateNextConfig ? 1 : -1);
-            return;
-        }
-        
-        if (state.Replay)
-        {
-            if (!string.IsNullOrWhiteSpace(_gameConfigJson))
-                _service.Restart(_gameConfigJson);
-            return;
-        }
-
-        if (state.Pause)
-        {
-            if (snap.IsPaused)
-                _service.Resume();
-            else
-                _service.Pause();
-
-            snap = _service.GetSnapshot();
-        }
-
-        if (snap.IsPaused || snap.IsTimeUp || snap.IsCompleted || snap.IsInterrupted)
-        {
-            if (snap.IsCompleted && !_manifestSaved)
-            {
-                var manifest = _configSource.LoadManifest(Content.RootDirectory);
-                var index = _configSource.SelectEntryIndex(manifest);
-                if (index >= 0 && index < manifest.Entries.Count)
-                {
-                    manifest.Entries[index].Completed = true;
-                    _configSource.SaveManifest(Content.RootDirectory, manifest);
-                }
-                _manifestSaved = true;
-            }
-            if (state.Next)
-            {
-                _gameConfigJson = _configSource.LoadConfigJson(Content.RootDirectory);
-                _manifestSaved = false;
-                _service.Restart(_gameConfigJson!);
-            }
-            return;
-        }
-
-        _service.ApplyInput(state.DirX, state.DirY, (state.DirX == 0f && state.DirY == 0f) ? 0f : _moveSpeed);
-
-        _service.Fire(state.FirePressed, state.FireHeld);
-
-        if (state.DropBomb) _service.DropBomb();
-
-        if (state.Reload) _service.Reload();
-
-        _service.RotateTowards(state.MouseX, state.MouseY, state.AimRadians, state.AimMagnitude);
-
-        var dt = MathF.Min((float)gameTime.ElapsedGameTime.TotalSeconds, 0.05f);
-
-        if (dt > 0f) _service.Tick(dt);
     }
 
     protected override void Draw(GameTime gameTime)
@@ -260,276 +135,103 @@ public class SwarmKC : Game
             case States.TITLE:
                 GraphicsDevice.Clear(Theme.Background);
                 _spriteBatch.Begin();
-                _titleScreen.Draw(_spriteBatch, Pixel);
+                _titleScreen.Draw(_spriteBatch, _pixelTexture.Value);
                 _spriteBatch.End();
                 return;
 
             case States.LOADING:
                 GraphicsDevice.Clear(Theme.Background);
                 _spriteBatch.Begin();
-                _loadingScreen.Draw(_spriteBatch, Pixel, gameTime);
+                _loadingScreen.Draw(_spriteBatch, _pixelTexture.Value, gameTime);
                 _spriteBatch.End();
                 return;
 
             case States.PLAYING:
-                DrawPlaying();
+                if (!_sessionManager.HasSession)
+                {
+                    GraphicsDevice.Clear(Color.Black);
+                    return;
+                }
+
+                _gameSessionRenderer.Draw(_sessionManager.GetSnapshot());
                 return;
         }
        
         base.Draw(gameTime);
     }
 
-    private void DrawPlaying()
+    private void TryApplySessionPresentationConfig()
     {
-         if (!IsSessionReady()) 
-        {
-            GraphicsDevice.Clear(Color.Black);
+        if (_appliedPresentationVersion == _sessionManager.PresentationConfigVersion)
             return;
+
+        ApplySessionPresentationConfig();
+        _appliedPresentationVersion = _sessionManager.PresentationConfigVersion;
+    }
+
+    private void ApplySessionPresentationConfig()
+    {
+        int w = (int)_sessionManager.StageWidth;
+        int h = (int)_sessionManager.StageHeight;
+
+        if (_graphics.PreferredBackBufferWidth != w || _graphics.PreferredBackBufferHeight != h)
+        {
+            _graphics.PreferredBackBufferWidth = w;
+            _graphics.PreferredBackBufferHeight = h;
+            _graphics.ApplyChanges();
         }
 
-        GraphicsDevice.SetRenderTarget(_renderTarget);
-        GraphicsDevice.Clear(Color.Black);
-        var snap = _service.GetSnapshot();
+        CreateOrRecreateSessionRenderer();
+    }
 
-        _spriteBatch.Begin();
+    private void CreateOrRecreateSessionRenderer()
+    {
+        _gameSessionRenderer = new GameSessionRenderer(
+            _spriteBatch,
+            GraphicsDevice,
+            _font,
+            _pixelTexture,
+            _sessionManager.StageWidth,
+            _sessionManager.StageHeight,
+            _sessionManager.BorderSize);
 
-        DrawRect(new Rectangle((int)snap.Stage.Left, (int)snap.Stage.Top, (int)(snap.Stage.Right - snap.Stage.Left), (int)(snap.Stage.Bottom - snap.Stage.Top)), new Color(20, 20, 20));
+        _gameSessionRenderer.Initialize();
+    }
 
-        foreach (var wall in snap.Walls)
+    private void SetState(States next)
+    {
+        _state = next;
+        IsMouseVisible = next == States.TITLE || next == States.LOADING;
+    }
+
+    private bool HandleGlobalEsc()
+    {
+        var kb = Keyboard.GetState();
+        bool escPressed = InputHelpers.JustPressed(Keys.Escape, kb, _prevKb);
+        _prevKb = kb;
+
+        if (!escPressed) return false;
+
+        if (_state == States.PLAYING)
         {
-            DrawRect(new Rectangle(
-                (int)(wall.X - wall.Radius),
-                (int)(wall.Y - wall.Radius),
-                (int)(wall.Radius * 2),
-                (int)(wall.Radius * 2)),
-                Color.Gray
-            );
+            _titleScreen.ResetFlags();
+            SetState(States.TITLE);
+            return true;
         }
 
-        var pa = snap.PlayerArea;
-        DrawRect(new Rectangle(
-            (int)(pa.X - pa.Radius),
-            (int)(pa.Y - pa.Radius),
-            (int)(pa.Radius * 2),
-            (int)(pa.Radius * 2)),
-            Color.Blue
-        );
-
-        var ta = snap.TargetArea;
-        DrawRect(new Rectangle(
-            (int)(ta.X - ta.Radius),
-            (int)(ta.Y - ta.Radius),
-            (int)(ta.Radius * 2),
-            (int)(ta.Radius * 2)),
-            snap.TargetAreaIsOpenToPlayer ? Color.SeaGreen : Color.OrangeRed
-        );
-
-        DrawPlayer(new Vector2(snap.Player.X, snap.Player.Y), (int)snap.Player.Radius, snap.Player.RotationAngle, Color.IndianRed);
-
-        foreach (var p in snap.Projectiles)
-            DrawCircle(new Vector2(p.X, p.Y), (int)p.Radius, Color.OrangeRed);
-
-        foreach (var e in snap.Enemies)
-            DrawPlayer(new Vector2(e.X, e.Y), (int)e.Radius, e.RotationAngle, GetColorForNonPlayerEntityType(e.Type));
-
-        if (snap.IsPaused || snap.IsInterrupted || snap.IsTimeUp || snap.IsCompleted)
+        if (_state == States.LOADING)
         {
-            string mainText = "";
-            string continueText = "PRESS R TO RUN TO THE NEXT SESSION";
-            string replayText = "PRESS F6 TO REPLAY THIS SESSION";
-            string resetText = "PRESS F8 TO RESET PROGRESS";
-            string navText = "PRESS F9/F10 TO PREV/NEXT CONFIG";
-
-            if (snap.IsPaused) mainText = "PAUSED";
-            else if (snap.IsInterrupted) mainText = "GAME OVER";
-            else if (snap.IsTimeUp) mainText = "TIME UP";
-
-            if (!string.IsNullOrEmpty(mainText))
-            {
-                Vector2 size = _font.MeasureString(mainText);
-                Vector2 pos = new(
-                    (WIDTH - size.X) / 2f,
-                    (HEIGHT - size.Y) / 2f
-                );
-                _spriteBatch.DrawString(_font, mainText, pos, Color.White);
-            }
-
-            Vector2 mainSize = string.IsNullOrEmpty(mainText) ? Vector2.Zero : _font.MeasureString(mainText);
-
-            Vector2 subSize = _font.MeasureString(continueText);
-            Vector2 subPos = new(
-                (WIDTH - subSize.X) / 2f,
-                (HEIGHT - mainSize.Y) / 2f + mainSize.Y + 10
-            );
-            _spriteBatch.DrawString(_font, continueText, subPos, Color.White);
-
-            Vector2 resetSize = _font.MeasureString(resetText);
-            Vector2 resetPos = new(
-                (WIDTH - resetSize.X) / 2f,
-                subPos.Y + resetSize.Y + 10
-            );
-            _spriteBatch.DrawString(_font, resetText, resetPos, Color.White);
-
-            Vector2 replaySize = _font.MeasureString(replayText);
-            Vector2 replayPos = new(
-                (WIDTH - replaySize.X) / 2f,
-                resetPos.Y + replaySize.Y + 10
-            );
-            _spriteBatch.DrawString(_font, replayText, replayPos, Color.White);
-
-            Vector2 navSize = _font.MeasureString(navText);
-            Vector2 navPos = new(
-                (WIDTH - navSize.X) / 2f,
-                replayPos.Y + navSize.Y + 10
-            );
-            _spriteBatch.DrawString(_font, navText, navPos, Color.White);
-
+            SetState(States.TITLE);
+            return true;
         }
-        _spriteBatch.End();
 
-        GraphicsDevice.SetRenderTarget(null);
-
-        GraphicsDevice.Clear(Color.Black);
-
-        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-        _spriteBatch.Draw(_renderTarget, _drawDestination, Color.White);
-
-        DrawBorder(_spriteBatch, _drawDestination, BORDER, Color.Black );
-
-        _hud.Draw(snap.GameSessionData);
-
-        _crosshairRenderer.Draw(snap.AimPositionX, snap.AimPositionY);
-        _spriteBatch.End();
-    }
-
-    private static Color GetColorForNonPlayerEntityType(string type)
-    {
-        return type switch
+        if (_state == States.TITLE)
         {
-            "Shooter" => Color.Purple,
-            "Healthy" => Color.Orange,
-            _ => Color.Yellow
-        };
-    }
-
-    private Texture2D GetCircle(int radius)
-    {
-        if (_circleCache.TryGetValue(radius, out var tex)) return tex;
-
-        int diam = radius * 2 + 1;
-        var data = new Color[diam * diam];
-        var r2 = radius * radius;
-        for (int y = 0; y < diam; y++)
-            for (int x = 0; x < diam; x++)
-            {
-                int dx = x - radius;
-                int dy = y - radius;
-                data[y * diam + x] = (dx * dx + dy * dy) <= r2 ? Color.White : Color.Transparent;
-            }
-
-        var t = new Texture2D(GraphicsDevice, diam, diam);
-        t.SetData(data);
-        _circleCache[radius] = t;
-        return t;
-    }
-
-    private void DrawCircle(Vector2 center, int radius, Color color)
-    {
-        var tex = GetCircle(radius);
-        var pos = new Vector2(center.X - radius, center.Y - radius);
-        _spriteBatch.Draw(tex, pos, color);
-    }
-
-    private void DrawPlayer(Vector2 pos, int radius, float rotation, Color color)
-    {
-        _spriteBatch.Draw(
-            Pixel,                     
-            position: pos,
-            sourceRectangle: null,
-            color: color,
-            rotation: rotation,
-            origin: new Vector2(0.5f, 0.5f),
-            scale: new Vector2(radius * 2f, radius * 2f),
-            effects: SpriteEffects.None,
-            layerDepth: 0f
-        );
-    }
-
-    private void DrawBorder(SpriteBatch spriteBatch, Rectangle rect, int baseThickness, Color color)
-    {
-        // Scale thickness proportional to how much the render target was scaled
-        float scale = rect.Width / WIDTH; // since WIDTH = 960, this gives your draw scale
-        int thickness = Math.Max(1, (int)(baseThickness * scale));
-
-        // Top
-        spriteBatch.Draw(Pixel, new Rectangle(rect.X, rect.Y, rect.Width, thickness), color);
-        // Bottom
-        spriteBatch.Draw(Pixel, new Rectangle(rect.X, rect.Y + rect.Height - thickness, rect.Width, thickness), color);
-        // Left
-        spriteBatch.Draw(Pixel, new Rectangle(rect.X, rect.Y, thickness, rect.Height), color);
-        // Right
-        spriteBatch.Draw(Pixel, new Rectangle(rect.X + rect.Width - thickness, rect.Y, thickness, rect.Height), color);
-    }
-
-    private static Texture2D? _pixel;
-    private Texture2D Pixel
-    {
-        get
-        {
-            if (_pixel == null)
-            {
-                _pixel = new Texture2D(GraphicsDevice, 1, 1);
-                _pixel.SetData([Color.White]);
-            }
-            return _pixel;
+            Exit();
+            return true;
         }
-    }
 
-    private void DrawRect(Rectangle rect, Color color)
-    {
-        _spriteBatch.Draw(Pixel, rect, color);
-    }
-
-    private void ResetManifestProgress()
-    {
-        var manifest = _configSource.LoadManifest(Content.RootDirectory);
-        manifest.ActiveIndex = null;
-        for (int i = 0; i < manifest.Entries.Count; i++)
-        {
-            manifest.Entries[i].Completed = false;
-        }
-        _configSource.SaveManifest(Content.RootDirectory, manifest);
-    }
-
-    private void NavigateConfig(int delta)
-    {
-        var manifest = _configSource.LoadManifest(Content.RootDirectory);
-        if (manifest.Entries.Count == 0) return;
-
-        int currentIndex = manifest.ActiveIndex is int idx && idx >= 0 && idx < manifest.Entries.Count
-            ? idx
-            : _configSource.SelectEntryIndex(manifest);
-
-        int nextIndex = (currentIndex + delta) % manifest.Entries.Count;
-        if (nextIndex < 0) nextIndex += manifest.Entries.Count;
-
-        manifest.ActiveIndex = nextIndex;
-        _configSource.SaveManifest(Content.RootDirectory, manifest);
-
-        _gameConfigJson = LoadConfigJsonFromManifestEntry(manifest, nextIndex);
-        _manifestSaved = false;
-        _service.Restart(_gameConfigJson!);
-    }
-
-    private string LoadConfigJsonFromManifestEntry(GameSessionConfigManifest manifest, int index)
-    {
-        var entry = manifest.Entries[index];
-        if (string.IsNullOrWhiteSpace(entry.File))
-            throw new InvalidOperationException("Manifest entry must include a file path.");
-
-        var contentRoot = Path.Combine(AppContext.BaseDirectory, Content.RootDirectory);
-        var configPath = Path.Combine(contentRoot, entry.File);
-        return File.ReadAllText(configPath);
+        return false;
     }
 
 }

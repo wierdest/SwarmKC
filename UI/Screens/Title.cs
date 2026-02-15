@@ -38,13 +38,9 @@ public sealed class Title(SpriteFont font, GraphicsDevice graphicsDevice)
         bool down = mouse.LeftButton == ButtonState.Pressed;
         bool clicked = InputHelpers.JustClicked(mouse, _prevMouse);
 
-        if (_start.Update(mouse.Position, down, clicked) || InputHelpers.JustPressed(Keys.Enter, kb, _prevKb))
-        {
-            GoToLoadingRequested = true;
-        }
+        GoToLoadingRequested = _start.Update(mouse.Position, down, clicked) || InputHelpers.JustPressed(Keys.Enter, kb, _prevKb);
 
-        if (_quit.Update(mouse.Position, down, clicked) || InputHelpers.JustPressed(Keys.Escape, kb, _prevKb))
-            QuitRequested = true;
+        QuitRequested = _quit.Update(mouse.Position, down, clicked);
 
         _prevKb = kb;
         _prevMouse = mouse;
