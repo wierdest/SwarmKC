@@ -50,9 +50,7 @@ public sealed class Title(SpriteFont font, GraphicsDevice graphicsDevice)
     {
         EnsureLayout();
 
-        spriteBatch.Draw(pixel, _graphicsDevice.Viewport.Bounds, Theme.Background);
-
-        const string title = "SWARM: KILL CANCER";
+        const string title = "SWARM";
         var size = _font.MeasureString(title);
         float cx = _graphicsDevice.Viewport.Width * 0.5f;
         spriteBatch.DrawString(_font, title, new Vector2(cx - size.X * 0.5f, 120f), Theme.Text);
