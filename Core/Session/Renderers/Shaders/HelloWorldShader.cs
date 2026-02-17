@@ -10,7 +10,7 @@ public sealed class HelloWorldShader : IDisposable
 
     private readonly Effect _effect;
     public Effect Effect => _effect;
-    private readonly EffectParameter? _spriteTexture;
+    private readonly EffectParameter? targetTexture;
     private readonly EffectParameter? _time;
     private readonly bool _ownsEffect;
 
@@ -18,7 +18,7 @@ public sealed class HelloWorldShader : IDisposable
     {
         ArgumentNullException.ThrowIfNull(effect);
         _effect = cloneEffect ? effect.Clone() : effect;
-        _spriteTexture = _effect.Parameters["SpriteTexture"];
+        targetTexture = _effect.Parameters["TargetTexture"];
         _time = _effect.Parameters["Time"];
         _ownsEffect = cloneEffect;
     }
@@ -32,7 +32,7 @@ public sealed class HelloWorldShader : IDisposable
     public void SetTexture(Texture2D texture)
     {
         ArgumentNullException.ThrowIfNull(texture);
-        _spriteTexture?.SetValue(texture);
+        targetTexture?.SetValue(texture);
     }
 
     public void SetTime(float seconds)

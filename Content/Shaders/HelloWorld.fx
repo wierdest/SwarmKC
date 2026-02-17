@@ -10,16 +10,15 @@
 // Basic example pixel (fragment) shader for the game.
 // Based on https://github.com/manbeardgames/monogame-hlsl-examples/blob/master/source/Example01ApplyShader/Content/BasicShader.fx
 
-// It provides a basic rainbow / foil effect
+// It provides a rainbow / foil effect
 
-Texture2D SpriteTexture;
+Texture2D TargetTexture;
 
-sampler2D SpriteTextureSampler = sampler_state
+sampler2D TargetTextureSampler = sampler_state
 {
-	Texture = <SpriteTexture>;
+	Texture = <TargetTexture>;
 };
 
-float Time;
 
 struct VertexShaderOutput
 {
@@ -37,9 +36,11 @@ float3 hsv2rgb(float3 c)
     return c.z * lerp(K.xxx, saturate(p - K.xxx), c.y);
 }
 
+extern float Time;
+
 float4 MainPS(VertexShaderOutput input) : COLOR
 {
-	float4 baseColor = tex2D(SpriteTextureSampler, input.TextureCoordinates) * input.Color;
+	float4 baseColor = tex2D(TargetTextureSampler, input.TextureCoordinates) * input.Color;
 
     float h = frac(Time * 0.12);
     float s = 1.0;
