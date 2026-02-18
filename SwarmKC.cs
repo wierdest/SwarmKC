@@ -7,6 +7,7 @@ using SwarmKC.Common.Graphics;
 using SwarmKC.Core;
 using SwarmKC.Core.Session;
 using SwarmKC.Core.Session.Renderers;
+using SwarmKC.Core.Session.Renderers.Background;
 using SwarmKC.UI;
 using SwarmKC.UI.Screens;
 
@@ -25,6 +26,7 @@ public class SwarmKC : Game
     private Title _titleScreen = null!;
     private Loading _loadingScreen = null!;
     private GameSessionRenderer _gameSessionRenderer = null!;
+    private BackgroundRenderer _backgroundRenderer = null!;
 
     private States _state = States.TITLE;
 
@@ -57,6 +59,7 @@ public class SwarmKC : Game
 
         _titleScreen = new Title(_font, GraphicsDevice);
         _loadingScreen = new Loading(_font, GraphicsDevice);
+        _backgroundRenderer = new BackgroundRenderer(GraphicsDevice, _spriteBatch, Content);
         
         Window.ClientSizeChanged += (_, __) => _gameSessionRenderer?.OnViewportChanged();
         
@@ -133,14 +136,14 @@ public class SwarmKC : Game
         switch (_state)
         {
             case States.TITLE:
-                GraphicsDevice.Clear(Theme.Background);
+                _backgroundRenderer.Draw(Theme.Background, (float)gameTime.TotalGameTime.TotalSeconds);
                 _spriteBatch.Begin();
                 _titleScreen.Draw(_spriteBatch, _pixelTexture.Value);
                 _spriteBatch.End();
                 return;
 
             case States.LOADING:
-                GraphicsDevice.Clear(Theme.Background);
+                _backgroundRenderer.Draw(Theme.Background, (float)gameTime.TotalGameTime.TotalSeconds);
                 _spriteBatch.Begin();
                 _loadingScreen.Draw(_spriteBatch, _pixelTexture.Value, gameTime);
                 _spriteBatch.End();
@@ -152,7 +155,7 @@ public class SwarmKC : Game
                     GraphicsDevice.Clear(Color.Black);
                     return;
                 }
-
+                _backgroundRenderer.Draw(Theme.Background, (float)gameTime.TotalGameTime.TotalSeconds);
                 _gameSessionRenderer.Draw(_sessionManager.GetSnapshot());
                 return;
         }
@@ -232,6 +235,12 @@ public class SwarmKC : Game
         }
 
         return false;
+    }
+
+    protected override void UnloadContent()
+    {
+        _backgroundRenderer?.Dispose();
+        base.UnloadContent();
     }
 
 }

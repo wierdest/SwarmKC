@@ -24,7 +24,6 @@ public sealed class GameSessionRenderer(
     private readonly CrosshairRenderer _crosshairRenderer = new(spriteBatch, graphicsDevice);
     private readonly Texture2D _pixel = pixelTexture.Value;
     private readonly Dictionary<int, Texture2D> _circleCache = new();
-    private RenderTarget2D _renderTarget = null!;
     private Rectangle _drawDestination;
     private readonly float _width = width;
     private readonly float _height = height;
@@ -32,7 +31,6 @@ public sealed class GameSessionRenderer(
 
     public void Initialize()
     {
-        _renderTarget = new RenderTarget2D(_graphicsDevice, (int)_width, (int)_height);
         RecalculateDestination();
     }
 
@@ -40,18 +38,7 @@ public sealed class GameSessionRenderer(
 
     public void Draw(GameSnapshot snap)
     {
-        _graphicsDevice.SetRenderTarget(_renderTarget);
-        _graphicsDevice.Clear(Color.Black);
-
         _spriteBatch.Begin();
-
-        DrawRect(
-            new Rectangle(
-                (int)snap.Stage.Left,
-                (int)snap.Stage.Top,
-                (int)(snap.Stage.Right - snap.Stage.Left),
-                (int)(snap.Stage.Bottom - snap.Stage.Top)),
-            new Color(20, 20, 20));
 
         foreach (var wall in snap.Walls)
         {
@@ -99,11 +86,7 @@ public sealed class GameSessionRenderer(
 
         _spriteBatch.End();
 
-        _graphicsDevice.SetRenderTarget(null);
-        _graphicsDevice.Clear(Color.Black);
-
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-        _spriteBatch.Draw(_renderTarget, _drawDestination, Color.White);
         DrawBorder(_drawDestination, _border, Color.Black);
 
         _hud.Draw(snap.GameSessionData);
