@@ -32,3 +32,9 @@
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
 /build:Shaders/DepthIllusionWithGridBox.fx
+
+#begin Shaders/DepthIllusionWithRuggedSurfaces.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/DepthIllusionWithRuggedSurfaces.fx

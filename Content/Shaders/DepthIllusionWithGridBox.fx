@@ -12,7 +12,7 @@
 // to give off the illusion of depth
 
 // It is the second step in the process of designing a
-// shader appropriate for a background
+// shader appropriate for the background
 
 Texture2D TargetTexture;
 

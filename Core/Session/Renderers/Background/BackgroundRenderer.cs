@@ -10,24 +10,23 @@ public sealed class BackgroundRenderer : IDisposable
 {
     private readonly GraphicsDevice _graphicsDevice;
     private readonly SpriteBatch _spriteBatch;
-    private readonly DepthIllusionWithGridBoxShader _shader;
+    private readonly DepthIllusionWithRuggedSurfacesShader _shader;
     private readonly bool _ownsShader;
     private readonly Texture2D _pixel;
 
-    public float DepthStrength { get; set; } = 0.95f;
-    public float ParallaxScale { get; set; } = 10.6f;
+    public float DepthStrength { get; set; } = 0.0f;
+    public float ParallaxScale { get; set; } = 0.0f;
     public Color FogColor { get; set; } = new(40, 18, 48);
-    public float FogStrength { get; set; } = 0.34f;
-    public Color LineColor { get; set; } = Color.HotPink;
-    public float LineIntensity { get; set; } = 1.0f;
+    public float FogStrength { get; set; } = 0.0f;
+    public Color SurfaceColor { get; set; } = Color.SeaGreen;
     public float CameraTiltIntensity { get; set; } = 0.22f;
 
     public BackgroundRenderer(GraphicsDevice graphicsDevice, SpriteBatch spriteBatch, ContentManager content)
-        : this(graphicsDevice, spriteBatch, DepthIllusionWithGridBoxShader.Load(content), ownsShader: true)
+        : this(graphicsDevice, spriteBatch, DepthIllusionWithRuggedSurfacesShader.Load(content), ownsShader: true)
     {
     }
 
-    public BackgroundRenderer(GraphicsDevice graphicsDevice, SpriteBatch spriteBatch, DepthIllusionWithGridBoxShader shader, bool ownsShader = false)
+    public BackgroundRenderer(GraphicsDevice graphicsDevice, SpriteBatch spriteBatch, DepthIllusionWithRuggedSurfacesShader shader, bool ownsShader = false)
     {
         _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
         _spriteBatch = spriteBatch ?? throw new ArgumentNullException(nameof(spriteBatch));
@@ -44,8 +43,8 @@ public sealed class BackgroundRenderer : IDisposable
         _shader.SetTime(timeSeconds);
         _shader.SetDepthStrength(DepthStrength);
         _shader.SetParallaxScale(ParallaxScale);
+        _shader.SetSurfaceColor(SurfaceColor);
         _shader.SetFog(FogColor, FogStrength);
-        _shader.SetLineColor(LineColor, LineIntensity);
         _shader.SetCameraTiltIntensity(CameraTiltIntensity);
         _shader.SetScreenSize(_graphicsDevice.Viewport.Width, _graphicsDevice.Viewport.Height);
 
