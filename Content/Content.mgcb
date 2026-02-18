@@ -26,3 +26,9 @@
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
 /build:Shaders/HelloWorld.fx
+
+#begin Shaders/DepthIllusionWithGridBox.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/DepthIllusionWithGridBox.fx
