@@ -14,12 +14,9 @@ public sealed class BackgroundRenderer : IDisposable
     private readonly bool _ownsShader;
     private readonly Texture2D _pixel;
 
-    public float DepthStrength { get; set; } = 0.0f;
-    public float ParallaxScale { get; set; } = 0.0f;
-    public Color FogColor { get; set; } = new(40, 18, 48);
-    public float FogStrength { get; set; } = 0.0f;
-    public Color SurfaceColor { get; set; } = Color.SeaGreen;
-    public float CameraTiltIntensity { get; set; } = 0.22f;
+    public Color SurfaceColor { get; set; } = Color.BlueViolet;
+    public float CameraTiltIntensity { get; set; } = 0.15f;
+    public float CameraZMotionSpeed { get; set; } = 0.5f;
 
     public BackgroundRenderer(GraphicsDevice graphicsDevice, SpriteBatch spriteBatch, ContentManager content)
         : this(graphicsDevice, spriteBatch, DepthIllusionWithRuggedSurfacesShader.Load(content), ownsShader: true)
@@ -41,11 +38,10 @@ public sealed class BackgroundRenderer : IDisposable
     {
         _shader.SetTexture(_pixel);
         _shader.SetTime(timeSeconds);
-        _shader.SetDepthStrength(DepthStrength);
-        _shader.SetParallaxScale(ParallaxScale);
         _shader.SetSurfaceColor(SurfaceColor);
-        _shader.SetFog(FogColor, FogStrength);
+        _shader.SetBackgroundColor(tint);
         _shader.SetCameraTiltIntensity(CameraTiltIntensity);
+        _shader.SetCameraZMotionSpeed(CameraZMotionSpeed);
         _shader.SetScreenSize(_graphicsDevice.Viewport.Width, _graphicsDevice.Viewport.Height);
 
         _spriteBatch.Begin(

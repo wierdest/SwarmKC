@@ -4,7 +4,7 @@ namespace SwarmKC.UI;
 
 public static class Theme
 {
-    public static readonly Color Background = Color.Black;
+    public static readonly Color Background = Color.SeaGreen;
 
     public static readonly Color Text = Color.White;
     public static readonly Color TextMuted = new(180, 180, 180);

@@ -22,11 +22,10 @@ struct VertexShaderOutput
 };
 
 extern float Time;
-extern float DepthStrength;
-extern float ParallaxScale;
-extern float4 Fog;
 extern float4 SurfaceColor;
+extern float4 BackgroundColor;
 extern float CameraTiltIntensity;
+extern float CameraZMotionSpeed;
 extern float2 ScreenSize;
 
 float hash21(float2 p)
@@ -53,8 +52,6 @@ float fbm(float2 p)
     float v = 0.0;
     float a = 0.5;
     v += a * noise2(p); p *= 2.02; a *= 0.5;
-    v += a * noise2(p); p *= 2.03; a *= 0.5;
-    v += a * noise2(p); p *= 2.01; a *= 0.5;
     v += a * noise2(p);
     return v;
 }
@@ -65,22 +62,20 @@ float ridged(float2 p)
     float a = 0.6;
 
     float n0 = 1.0 - abs(noise2(p) * 2.0 - 1.0); p *= 2.1; v += n0 * n0 * a; a *= 0.55;
-    float n1 = 1.0 - abs(noise2(p) * 2.0 - 1.0); p *= 2.0; v += n1 * n1 * a; a *= 0.55;
-    float n2 = 1.0 - abs(noise2(p) * 2.0 - 1.0); p *= 2.0; v += n2 * n2 * a; a *= 0.55;
-    float n3 = 1.0 - abs(noise2(p) * 2.0 - 1.0);          v += n3 * n3 * a;
+    float n1 = 1.0 - abs(noise2(p) * 2.0 - 1.0);          v += n1 * n1 * a;
 
     return v;
 }
 
 float rockHeight2D(float2 uv)
 {
-    float2 warp = float2(fbm(uv * 0.70), fbm(uv * 0.70 + float2(11.3, 7.1))) * 1.8;
+    float2 warp = float2(fbm(uv * 0.70), noise2(uv * 0.70 + float2(11.3, 7.1))) * 1.4;
     float2 q = uv + warp;
 
     float h = ridged(q * 0.95) * 0.85;
-    h += ridged(q * 2.2 + float2(13.7, -8.4)) * 0.35;
+    h += noise2(q * 2.0 + float2(13.7, -8.4)) * 0.30;
 
-    float cracks = pow(saturate(1.0 - abs(sin(q.x * 3.7 + q.y * 2.9 + h * 5.5))), 10.0);
+    float cracks = pow(saturate(1.0 - abs(sin(q.x * 3.7 + q.y * 2.9 + h * 5.5))), 9.0);
     h -= cracks * 0.18;
 
     return h;
@@ -106,23 +101,32 @@ float centerOffsetX(float z)
 
 float floorDisp(float2 xz)
 {
-    float n = ridged(xz * 0.42);
-    n += fbm(xz * 1.4 + float2(7.1, 13.4)) * 0.35;
-    return (n - 0.45) * 2.00;
+    float flow = centerOffsetX(xz.y);
+    float2 q = xz + float2(flow * 0.22, sin(flow * 0.5) * 0.10);
+
+    float n = ridged(q * 0.42);
+    n += noise2(q * 1.4 + float2(7.1, 13.4)) * 0.22;
+    return (n - 0.45) * 1.85;
 }
 
 float ceilDisp(float2 xz)
 {
-    float n = ridged(xz * 0.40 + float2(21.3, 5.4));
-    n += fbm(xz * 1.2 + float2(2.7, 9.6)) * 0.30;
-    return (n - 0.45) * 1.70;
+    float flow = centerOffsetX(xz.y);
+    float2 q = xz + float2(flow * 0.16, cos(flow * 0.45) * 0.08);
+
+    float n = ridged(q * 0.40 + float2(21.3, 5.4));
+    n += noise2(q * 1.3 + float2(2.7, 9.6)) * 0.20;
+    return (n - 0.45) * 1.60;
 }
 
 float wallDisp(float2 zy, float seed)
 {
-    float n = ridged(zy * 0.44 + float2(seed, seed * 1.7));
-    n += fbm(zy * 1.3 + float2(seed * 1.7, seed * 0.8)) * 0.30;
-    return (n - 0.45) * 2.25;
+    float flow = centerOffsetX(zy.x);
+    float2 q = zy + float2(flow * 0.18, sin(flow * 0.55) * 0.10);
+
+    float n = ridged(q * 0.44 + float2(seed, seed * 1.7));
+    n += noise2(q * 1.3 + float2(seed * 1.7, seed * 0.8)) * 0.20;
+    return (n - 0.45) * 2.05;
 }
 
 float leftWallX(float3 p)
@@ -159,15 +163,17 @@ float corridorDist(float3 p)
 float3 sceneNormal(float3 p)
 {
     float e = 0.010;
-    float dx = corridorDist(p + float3(e, 0.0, 0.0)) - corridorDist(p - float3(e, 0.0, 0.0));
-    float dy = corridorDist(p + float3(0.0, e, 0.0)) - corridorDist(p - float3(0.0, e, 0.0));
-    float dz = corridorDist(p + float3(0.0, 0.0, e)) - corridorDist(p - float3(0.0, 0.0, e));
-    return normalize(float3(dx, dy, dz));
+    float c = corridorDist(p);
+    float3 n = float3(
+        corridorDist(p + float3(e, 0.0, 0.0)) - c,
+        corridorDist(p + float3(0.0, e, 0.0)) - c,
+        corridorDist(p + float3(0.0, 0.0, e)) - c);
+    return normalize(n);
 }
 
 void buildCamera(float2 uv, out float3 ro, out float3 rd)
 {
-    float zTravel = Time * 0.42;
+    float zTravel = Time * CameraZMotionSpeed;
 
     ro = float3(0.0, 1.20, -2.2 + zTravel);
     float3 ta = float3(0.0, 1.20, 8.5 + zTravel);
@@ -190,7 +196,7 @@ void buildCamera(float2 uv, out float3 ro, out float3 rd)
     rd = normalize(forward + uv.x * rightRolled * fov + uv.y * upRolled * fov * 0.82);
 }
 
-#define RM_STEPS 64
+#define RM_STEPS 36
 #define RM_MAX_DIST 65.0
 
 float4 MainPS(VertexShaderOutput input) : COLOR
@@ -203,13 +209,13 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     float3 ro, rd;
     buildCamera(uv, ro, rd);
 
-    float3 fogColor = saturate(Fog.rgb);
-    float fogStrength = saturate(Fog.a);
+    float3 fogColor = float3(0.16, 0.07, 0.19);
+    float fogStrength = 0.35;
 
     float3 surfColor = saturate(SurfaceColor.rgb);
     float surfGain = max(0.0, SurfaceColor.a);
 
-    float3 bg = lerp(float3(0.018, 0.018, 0.020), fogColor * 0.28, 0.42);
+    float3 bg = saturate(BackgroundColor.rgb);
     float3 color = bg;
 
     float t = 0.0;
@@ -221,13 +227,13 @@ float4 MainPS(VertexShaderOutput input) : COLOR
         float3 p = ro + rd * t;
         d = corridorDist(p);
 
-        if (d < 0.010)
+        if (d < 0.014)
         {
             hit = 1.0;
             break;
         }
 
-        t += clamp(d * 0.72, 0.010, 0.60);
+        t += clamp(d * 0.68, 0.010, 0.60);
         if (t > RM_MAX_DIST)
             break;
     }
@@ -241,16 +247,16 @@ float4 MainPS(VertexShaderOutput input) : COLOR
         if (dot(n, viewDir) < 0.0)
             n = -n;
 
-        float3 triW = pow(abs(n), 3.5);
+        float3 triW = abs(n);
         triW /= (triW.x + triW.y + triW.z + 1e-5);
 
-        float density = saturate((ParallaxScale - 2.0) / 6.0);
-        float texScale = lerp(1.6, 5.2, density);
+        float texScale = 2.6;
 
-        float hX = rockHeight2D(p.yz * texScale);
-        float hY = rockHeight2D(p.xz * texScale);
-        float hZ = rockHeight2D(p.xy * texScale);
-        float h = hX * triW.x + hY * triW.y + hZ * triW.z;
+        float2 uvXY = p.xy * texScale;
+        float2 uvXZ = p.xz * texScale;
+        float hXY = rockHeight2D(uvXY);
+        float hXZ = rockHeight2D(uvXZ);
+        float h = hXY * triW.z + hXZ * (triW.x + triW.y);
 
         float3 lightDir = normalize(float3(-0.34, 0.76, -0.30));
         float3 refl = reflect(-lightDir, n);
@@ -262,7 +268,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
         float strat = abs(frac(h * 8.0) - 0.5);
         float contour = 1.0 - smoothstep(0.06, 0.22, strat);
 
-        float shade = 0.15 + diff * (0.54 + 0.34 * saturate(DepthStrength));
+        float shade = 0.15 + diff * 0.75;
         shade += spec * 0.06 + rim * 0.08;
         shade += h * 0.42;
         shade -= contour * 0.20;

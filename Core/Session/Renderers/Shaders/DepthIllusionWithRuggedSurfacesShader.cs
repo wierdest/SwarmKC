@@ -14,11 +14,12 @@ public sealed class DepthIllusionWithRuggedSurfacesShader : IDisposable
 
     private readonly EffectParameter _targetTexture;
     private readonly EffectParameter _time;
-    private readonly EffectParameter _depthStrength;
-    private readonly EffectParameter _parallaxScale;
-    private readonly EffectParameter _fog;                 // float4: rgb=color, a=strength
+    // TODO add control for the fog intensity to be able to change the relationship 
+    // between surface and background color
     private readonly EffectParameter _surfaceColor;        // float4: rgb=color, a=intensity
+    private readonly EffectParameter _backgroundColor;     // float4: rgb=clear/background color
     private readonly EffectParameter _cameraTiltIntensity; // float: 0..1
+    private readonly EffectParameter _cameraZMotionSpeed; // float: >= 0
     private readonly EffectParameter _screenSize;          // float2
 
     private readonly bool _ownsEffect;
@@ -30,11 +31,10 @@ public sealed class DepthIllusionWithRuggedSurfacesShader : IDisposable
         _effect = cloneEffect ? effect.Clone() : effect;
         _targetTexture = GetRequiredParameter(_effect, "TargetTexture");
         _time = GetRequiredParameter(_effect, "Time");
-        _depthStrength = GetRequiredParameter(_effect, "DepthStrength");
-        _parallaxScale = GetRequiredParameter(_effect, "ParallaxScale");
-        _fog = GetRequiredParameter(_effect, "Fog");
         _surfaceColor = GetRequiredParameter(_effect, "SurfaceColor");
+        _backgroundColor = GetRequiredParameter(_effect, "BackgroundColor");
         _cameraTiltIntensity = GetRequiredParameter(_effect, "CameraTiltIntensity");
+        _cameraZMotionSpeed = GetRequiredParameter(_effect, "CameraZMotionSpeed");
         _screenSize = GetRequiredParameter(_effect, "ScreenSize");
         _ownsEffect = cloneEffect;
     }
@@ -59,23 +59,6 @@ public sealed class DepthIllusionWithRuggedSurfacesShader : IDisposable
         _time.SetValue(seconds);
     }
 
-    public void SetDepthStrength(float value)
-    {
-        _depthStrength.SetValue(MathHelper.Clamp(value, 0f, 1f));
-    }
-
-    public void SetParallaxScale(float value)
-    {
-        _parallaxScale.SetValue(Math.Max(0f, value));
-    }
-
-    public void SetFog(Color color, float strength)
-    {
-        var v = color.ToVector4();
-        v.W = MathHelper.Clamp(strength, 0f, 1f);
-        _fog.SetValue(v);
-    }
-
     public void SetSurfaceColor(Color color, float intensity = 1f)
     {
         var v = color.ToVector4();
@@ -83,9 +66,19 @@ public sealed class DepthIllusionWithRuggedSurfacesShader : IDisposable
         _surfaceColor.SetValue(v);
     }
 
+    public void SetBackgroundColor(Color color)
+    {
+        _backgroundColor.SetValue(color.ToVector4());
+    }
+
     public void SetCameraTiltIntensity(float value)
     {
-        _cameraTiltIntensity.SetValue(MathHelper.Clamp(value, 0f, 1f));
+        _cameraTiltIntensity.SetValue(Math.Clamp(value, 0f, 1f));
+    }
+
+    public void SetCameraZMotionSpeed(float value)
+    {
+        _cameraZMotionSpeed.SetValue(Math.Max(0f, value));
     }
 
     public void SetScreenSize(int width, int height)
