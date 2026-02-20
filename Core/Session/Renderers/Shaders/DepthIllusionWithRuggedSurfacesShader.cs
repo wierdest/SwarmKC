@@ -17,6 +17,8 @@ public sealed class DepthIllusionWithRuggedSurfacesShader : IDisposable
     // TODO add control for the fog intensity to be able to change the relationship 
     // between surface and background color
     private readonly EffectParameter _surfaceColor;        // float4: rgb=color, a=intensity
+    private readonly EffectParameter _fogColor;        // float4: rgb=color, a=intensity
+    
     private readonly EffectParameter _backgroundColor;     // float4: rgb=clear/background color
     private readonly EffectParameter _cameraTiltIntensity; // float: 0..1
     private readonly EffectParameter _cameraZMotionSpeed; // float: >= 0
@@ -32,6 +34,7 @@ public sealed class DepthIllusionWithRuggedSurfacesShader : IDisposable
         _targetTexture = GetRequiredParameter(_effect, "TargetTexture");
         _time = GetRequiredParameter(_effect, "Time");
         _surfaceColor = GetRequiredParameter(_effect, "SurfaceColor");
+        _fogColor = GetRequiredParameter(_effect, "FogColor");
         _backgroundColor = GetRequiredParameter(_effect, "BackgroundColor");
         _cameraTiltIntensity = GetRequiredParameter(_effect, "CameraTiltIntensity");
         _cameraZMotionSpeed = GetRequiredParameter(_effect, "CameraZMotionSpeed");
@@ -64,6 +67,13 @@ public sealed class DepthIllusionWithRuggedSurfacesShader : IDisposable
         var v = color.ToVector4();
         v.W = Math.Max(0f, intensity);
         _surfaceColor.SetValue(v);
+    }
+
+    public void SetFogColor(Color color, float intensity = 1f)
+    {
+        var v = color.ToVector4();
+        v.W = Math.Max(0f, intensity);
+        _fogColor.SetValue(v);
     }
 
     public void SetBackgroundColor(Color color)

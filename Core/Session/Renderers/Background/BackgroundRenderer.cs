@@ -13,8 +13,10 @@ public sealed class BackgroundRenderer : IDisposable
     private readonly DepthIllusionWithRuggedSurfacesShader _shader;
     private readonly bool _ownsShader;
     private readonly Texture2D _pixel;
-
-    public Color SurfaceColor { get; set; } = Color.BlueViolet;
+    public Color SurfaceColor { get; set; } = Color.HotPink;
+    public float SurfaceColorIntensity { get; set; } = 0.8f;
+    public Color FogColor { get; set; } = Color.DarkCyan;
+    public float FogColorIntensity { get; set; } = 0.3f;
     public float CameraTiltIntensity { get; set; } = 0.15f;
     public float CameraZMotionSpeed { get; set; } = 0.5f;
 
@@ -38,7 +40,8 @@ public sealed class BackgroundRenderer : IDisposable
     {
         _shader.SetTexture(_pixel);
         _shader.SetTime(timeSeconds);
-        _shader.SetSurfaceColor(SurfaceColor);
+        _shader.SetSurfaceColor(SurfaceColor, SurfaceColorIntensity);
+        _shader.SetFogColor(FogColor, FogColorIntensity);
         _shader.SetBackgroundColor(tint);
         _shader.SetCameraTiltIntensity(CameraTiltIntensity);
         _shader.SetCameraZMotionSpeed(CameraZMotionSpeed);
