@@ -286,7 +286,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
 }
 
 // Technique name intentionally matches shader purpose.
-technique DepthIllusionWithGridBox
+technique GridBoxDepth
 {
     pass P0
     {

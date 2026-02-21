@@ -5,9 +5,9 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace SwarmKC.Core.Session.Renderers.Shaders;
 
-public sealed class DepthIllusionWithGridBoxShader : IDisposable
+public sealed class GridBoxDepthShader : IDisposable
 {
-    public const string DefaultAssetName = "Shaders/DepthIllusionWithGridBox";
+    public const string DefaultAssetName = "Shaders/GridBoxDepth";
 
     private readonly Effect _effect;
     public Effect Effect => _effect;
@@ -23,7 +23,7 @@ public sealed class DepthIllusionWithGridBoxShader : IDisposable
 
     private readonly bool _ownsEffect;
 
-    public DepthIllusionWithGridBoxShader(Effect effect, bool cloneEffect = true)
+    public GridBoxDepthShader(Effect effect, bool cloneEffect = true)
     {
         ArgumentNullException.ThrowIfNull(effect);
 
@@ -39,13 +39,13 @@ public sealed class DepthIllusionWithGridBoxShader : IDisposable
         _ownsEffect = cloneEffect;
     }
 
-    public static DepthIllusionWithGridBoxShader Load(
+    public static GridBoxDepthShader Load(
         ContentManager content,
         string assetName = DefaultAssetName,
         bool cloneEffect = true)
     {
         ArgumentNullException.ThrowIfNull(content);
-        return new DepthIllusionWithGridBoxShader(content.Load<Effect>(assetName), cloneEffect);
+        return new GridBoxDepthShader(content.Load<Effect>(assetName), cloneEffect);
     }
 
     public void SetTexture(Texture2D texture)

@@ -10,7 +10,7 @@ public sealed class BackgroundRenderer : IDisposable
 {
     private readonly GraphicsDevice _graphicsDevice;
     private readonly SpriteBatch _spriteBatch;
-    private readonly DepthIllusionWithRuggedSurfacesShader _shader;
+    private readonly OrganicDepthShader _shader;
     private readonly bool _ownsShader;
     private readonly Texture2D _pixel;
     public Color SurfaceColor { get; set; } = Color.HotPink;
@@ -21,11 +21,11 @@ public sealed class BackgroundRenderer : IDisposable
     public float CameraZMotionSpeed { get; set; } = 0.5f;
 
     public BackgroundRenderer(GraphicsDevice graphicsDevice, SpriteBatch spriteBatch, ContentManager content)
-        : this(graphicsDevice, spriteBatch, DepthIllusionWithRuggedSurfacesShader.Load(content), ownsShader: true)
+        : this(graphicsDevice, spriteBatch, OrganicDepthShader.Load(content), ownsShader: true)
     {
     }
 
-    public BackgroundRenderer(GraphicsDevice graphicsDevice, SpriteBatch spriteBatch, DepthIllusionWithRuggedSurfacesShader shader, bool ownsShader = false)
+    public BackgroundRenderer(GraphicsDevice graphicsDevice, SpriteBatch spriteBatch, OrganicDepthShader shader, bool ownsShader = false)
     {
         _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
         _spriteBatch = spriteBatch ?? throw new ArgumentNullException(nameof(spriteBatch));

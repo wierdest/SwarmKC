@@ -5,9 +5,9 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace SwarmKC.Core.Session.Renderers.Shaders;
 
-public sealed class DepthIllusionWithRuggedSurfacesShader : IDisposable
+public sealed class OrganicDepthShader : IDisposable
 {
-    public const string DefaultAssetName = "Shaders/DepthIllusionWithRuggedSurfaces";
+    public const string DefaultAssetName = "Shaders/OrganicDepth";
 
     private readonly Effect _effect;
     public Effect Effect => _effect;
@@ -26,7 +26,7 @@ public sealed class DepthIllusionWithRuggedSurfacesShader : IDisposable
 
     private readonly bool _ownsEffect;
 
-    public DepthIllusionWithRuggedSurfacesShader(Effect effect, bool cloneEffect = true)
+    public OrganicDepthShader(Effect effect, bool cloneEffect = true)
     {
         ArgumentNullException.ThrowIfNull(effect);
 
@@ -42,13 +42,13 @@ public sealed class DepthIllusionWithRuggedSurfacesShader : IDisposable
         _ownsEffect = cloneEffect;
     }
 
-    public static DepthIllusionWithRuggedSurfacesShader Load(
+    public static OrganicDepthShader Load(
         ContentManager content,
         string assetName = DefaultAssetName,
         bool cloneEffect = true)
     {
         ArgumentNullException.ThrowIfNull(content);
-        return new DepthIllusionWithRuggedSurfacesShader(content.Load<Effect>(assetName), cloneEffect);
+        return new OrganicDepthShader(content.Load<Effect>(assetName), cloneEffect);
     }
 
      public void SetTexture(Texture2D texture)

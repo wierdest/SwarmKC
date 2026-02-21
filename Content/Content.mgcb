@@ -27,14 +27,14 @@
 /processorParam:DebugMode=Auto
 /build:Shaders/HelloWorld.fx
 
-#begin Shaders/DepthIllusionWithGridBox.fx
+#begin Shaders/GridBoxDepth.fx
 /importer:EffectImporter
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
-/build:Shaders/DepthIllusionWithGridBox.fx
+/build:Shaders/GridBoxDepth.fx
 
-#begin Shaders/DepthIllusionWithRuggedSurfaces.fx
+#begin Shaders/OrganicDepth.fx
 /importer:EffectImporter
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
-/build:Shaders/DepthIllusionWithRuggedSurfaces.fx
+/build:Shaders/OrganicDepth.fx
