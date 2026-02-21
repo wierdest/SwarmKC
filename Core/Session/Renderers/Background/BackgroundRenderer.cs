@@ -54,7 +54,7 @@ public sealed class BackgroundRenderer : IDisposable
             rasterizerState: RasterizerState.CullNone,
             effect: _shader.Effect);
 
-        _spriteBatch.Draw(_pixel, _graphicsDevice.Viewport.Bounds, tint);
+        _spriteBatch.Draw(_pixel, _graphicsDevice.Viewport.Bounds, Color.White);
         _spriteBatch.End();
     }
 

@@ -31,7 +31,7 @@ public sealed class OrganicDepthShader : IDisposable
         ArgumentNullException.ThrowIfNull(effect);
 
         _effect = cloneEffect ? effect.Clone() : effect;
-        _targetTexture = GetRequiredParameter(_effect, "TargetTexture");
+        _targetTexture = _effect.Parameters["TargetTexture"];
         _time = GetRequiredParameter(_effect, "Time");
         _surfaceColor = GetRequiredParameter(_effect, "SurfaceColor");
         _fogColor = GetRequiredParameter(_effect, "FogColor");
@@ -51,8 +51,9 @@ public sealed class OrganicDepthShader : IDisposable
         return new OrganicDepthShader(content.Load<Effect>(assetName), cloneEffect);
     }
 
-     public void SetTexture(Texture2D texture)
+    public void SetTexture(Texture2D texture)
     {
+        if (_targetTexture is null) return;
         ArgumentNullException.ThrowIfNull(texture);
         _targetTexture.SetValue(texture);
     }

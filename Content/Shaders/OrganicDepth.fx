@@ -8,7 +8,9 @@
 #endif
 
 // Organic Depth shader:
-// attempts to represent a organic tunnel in which surfaces are alike soft tissue
+// attempts to represent a organic tunnel in which surfaces are like soft tissue
+
+// Unused in this shader, it is optimized out in compilation
 Texture2D TargetTexture;
 
 sampler2D TargetTextureSampler = sampler_state
@@ -239,8 +241,8 @@ static const float WALL_BASE_SEED_MULTIPLIER_A = 1.7;
 static const float WALL_BASE_SEED_MULTIPLIER_B = 0.8;
 
 static const float WALL_DETAIL_SCALE = 1.3;
-static const float WALL_DETAIL_SEED_MULTIPLIER_A = 1.7;
-static const float WALL_DETAIL_SEED_MULTIPLIER_B = 0.8;
+static const float WALL_DETAIL_SEED_MULTIPLIER_A = 1.9;
+static const float WALL_DETAIL_SEED_MULTIPLIER_B = 1.0;
 static const float WALL_DETAIL_MULTIPLIER = 0.20;
 
 static const float WALL_HEIGHT_MIDPOINT = 0.45;
@@ -252,7 +254,7 @@ float wallDisp(float2 zy, float seed)
 
     float height = tissueRelief(wallUv * WALL_BASE_RELIEF_SCALE + float2(seed * WALL_BASE_SEED_MULTIPLIER_A, seed * WALL_BASE_SEED_MULTIPLIER_B));
 
-    height += noise2(wallUv * WALL_DETAIL_SCALE + float2(seed * WALL_BASE_SEED_MULTIPLIER_A, seed * WALL_BASE_SEED_MULTIPLIER_B)) * WALL_DETAIL_MULTIPLIER;
+    height += noise2(wallUv * WALL_DETAIL_SCALE + float2(seed * WALL_DETAIL_SEED_MULTIPLIER_A, seed * WALL_DETAIL_SEED_MULTIPLIER_B)) * WALL_DETAIL_MULTIPLIER;
 
     return (height - WALL_HEIGHT_MIDPOINT) * WALL_HEIGHT_AMPLITUDE;
 }
@@ -431,11 +433,6 @@ static const float2 VIGNETTE_SCALE = float2(0.86, 1.04);
 static const float VIGNETTE_MIN = 0.55;
 static const float VIGNETTE_MAX = 1.0;
 
-// Source tint modulation
-static const float3 LUMA_WEIGHTS = float3(0.299, 0.587, 0.114);
-static const float TINT_MIN = 0.90;
-static const float TINT_MAX = 1.05;
-
 float4 MainPS(VertexShaderOutput input) : COLOR
 {
     float2 resolution = max(ScreenSize, MIN_SCREEN_SIZE);
@@ -487,10 +484,8 @@ float4 MainPS(VertexShaderOutput input) : COLOR
         float3 triBlend = abs(normal);
         triBlend /= (triBlend.x + triBlend.y + triBlend.z + TRI_BLEND_EPSILON);
 
-        float texScale = 2.6;
-
-        float2 uvXY = p.xy * texScale;
-        float2 uvXZ = p.xz * texScale;
+        float2 uvXY = p.xy * TISSUE_TEX_SCALE;
+        float2 uvXZ = p.xz * TISSUE_TEX_SCALE;
         float hXY = tissueHeight2D(uvXY);
         float hXZ = tissueHeight2D(uvXZ);
         float height = hXY * triBlend.z + hXZ * (triBlend.x + triBlend.y);
@@ -521,11 +516,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
 
     float vignette = saturate(1.0 - length(uv * VIGNETTE_SCALE));
     color *= lerp(VIGNETTE_MIN, VIGNETTE_MAX, vignette);
-
-    float4 source = tex2D(TargetTextureSampler, input.TextureCoordinates) * input.Color;
-    float tintLuma = dot(source.rgb, LUMA_WEIGHTS);
-    color *= lerp(TINT_MIN, TINT_MAX, tintLuma);
-
+    
     return float4(saturate(color), OUTPUT_ALPHA);
 }
 
