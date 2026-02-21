@@ -31,7 +31,7 @@ public sealed class Title(SpriteFont font, GraphicsDevice graphicsDevice)
     public void Update()
     {
         EnsureLayout();
-
+        _graphicsDevice.Clear(Theme.TitleBackground);
         var kb = Keyboard.GetState();
         var mouse = Mouse.GetState();
 
