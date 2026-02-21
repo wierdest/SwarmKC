@@ -13,12 +13,6 @@ public sealed class BackgroundRenderer : IDisposable
     private readonly OrganicDepthShader _shader;
     private readonly bool _ownsShader;
     private readonly Texture2D _pixel;
-    public Color SurfaceColor { get; set; } = Color.HotPink;
-    public float SurfaceColorIntensity { get; set; } = 0.8f;
-    public Color FogColor { get; set; } = Color.DarkCyan;
-    public float FogColorIntensity { get; set; } = 0.3f;
-    public float CameraTiltIntensity { get; set; } = 0.15f;
-    public float CameraZMotionSpeed { get; set; } = 0.5f;
 
     public BackgroundRenderer(GraphicsDevice graphicsDevice, SpriteBatch spriteBatch, ContentManager content)
         : this(graphicsDevice, spriteBatch, OrganicDepthShader.Load(content), ownsShader: true)
@@ -36,17 +30,12 @@ public sealed class BackgroundRenderer : IDisposable
         _pixel.SetData([Color.White]);
     }
 
-    public void Draw(Color tint, float timeSeconds)
+    public void Draw(float timeSeconds)
     {
         _shader.SetTexture(_pixel);
         _shader.SetTime(timeSeconds);
-        _shader.SetSurfaceColor(SurfaceColor, SurfaceColorIntensity);
-        _shader.SetFogColor(FogColor, FogColorIntensity);
-        _shader.SetBackgroundColor(tint);
-        _shader.SetCameraTiltIntensity(CameraTiltIntensity);
-        _shader.SetCameraZMotionSpeed(CameraZMotionSpeed);
         _shader.SetScreenSize(_graphicsDevice.Viewport.Width, _graphicsDevice.Viewport.Height);
-
+        
         _spriteBatch.Begin(
             blendState: BlendState.Opaque,
             samplerState: SamplerState.LinearClamp,
@@ -57,6 +46,31 @@ public sealed class BackgroundRenderer : IDisposable
         _spriteBatch.Draw(_pixel, _graphicsDevice.Viewport.Bounds, Color.White);
         _spriteBatch.End();
     }
+
+    public void ApplyBackgroundProfile(BackgroundProfile profile)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+
+        _shader.SetSurfaceColor(profile.SurfaceColor, profile.SurfaceColorIntensity);
+        _shader.SetFogColor(profile.FogColor, profile.FogColorIntensity);
+        _shader.SetBackgroundColor(profile.BackgroundColor);
+        _shader.SetCameraTiltIntensity(profile.CameraTiltIntensity);
+        _shader.SetCameraZMotionSpeed(profile.CameraZMotionSpeed);
+
+        _shader.SetLightDirection(profile.LightDirection);
+        _shader.SetLightingStrength(
+            profile.LightingStrength.X,
+            profile.LightingStrength.Y,
+            profile.LightingStrength.Z,
+            profile.LightingStrength.W);
+
+        _shader.SetLightingPower(
+            profile.LightingPower.X,
+            profile.LightingPower.Y);
+
+        _shader.SetLightColor(profile.LightColor, profile.LightColorIntensity);
+    }
+
 
     public void Dispose()
     {

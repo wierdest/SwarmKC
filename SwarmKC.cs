@@ -59,8 +59,10 @@ public class SwarmKC : Game
 
         _titleScreen = new Title(_font, GraphicsDevice);
         _loadingScreen = new Loading(_font, GraphicsDevice);
-        _backgroundRenderer = new BackgroundRenderer(GraphicsDevice, _spriteBatch, Content);
         
+        _backgroundRenderer = new BackgroundRenderer(GraphicsDevice, _spriteBatch, Content);
+        _backgroundRenderer.ApplyBackgroundProfile(BackgroundProfiles.Dark);
+
         Window.ClientSizeChanged += (_, __) => _gameSessionRenderer?.OnViewportChanged();
         
         SetState(States.TITLE);
@@ -136,14 +138,13 @@ public class SwarmKC : Game
         switch (_state)
         {
             case States.TITLE:
-                _backgroundRenderer.Draw(Theme.Background, (float)gameTime.TotalGameTime.TotalSeconds);
+
                 _spriteBatch.Begin();
                 _titleScreen.Draw(_spriteBatch, _pixelTexture.Value);
                 _spriteBatch.End();
                 return;
 
             case States.LOADING:
-                _backgroundRenderer.Draw(Theme.Background, (float)gameTime.TotalGameTime.TotalSeconds);
                 _spriteBatch.Begin();
                 _loadingScreen.Draw(_spriteBatch, _pixelTexture.Value, gameTime);
                 _spriteBatch.End();
@@ -155,7 +156,7 @@ public class SwarmKC : Game
                     GraphicsDevice.Clear(Color.Black);
                     return;
                 }
-                _backgroundRenderer.Draw(Theme.Background, (float)gameTime.TotalGameTime.TotalSeconds);
+                _backgroundRenderer.Draw((float)gameTime.TotalGameTime.TotalSeconds);
                 _gameSessionRenderer.Draw(_sessionManager.GetSnapshot());
                 return;
         }

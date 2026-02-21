@@ -14,15 +14,16 @@ public sealed class OrganicDepthShader : IDisposable
 
     private readonly EffectParameter _targetTexture;
     private readonly EffectParameter _time;
-    // TODO add control for the fog intensity to be able to change the relationship 
-    // between surface and background color
-    private readonly EffectParameter _surfaceColor;        // float4: rgb=color, a=intensity
-    private readonly EffectParameter _fogColor;        // float4: rgb=color, a=intensity
-    
-    private readonly EffectParameter _backgroundColor;     // float4: rgb=clear/background color
+    private readonly EffectParameter _surfaceColor; // float4: rgb=color, a=intensity
+    private readonly EffectParameter _fogColor; // float4: rgb=color, a=intensity
+    private readonly EffectParameter _backgroundColor; // float4: rgb=clear/background color
     private readonly EffectParameter _cameraTiltIntensity; // float: 0..1
     private readonly EffectParameter _cameraZMotionSpeed; // float: >= 0
-    private readonly EffectParameter _screenSize;          // float2
+    private readonly EffectParameter _screenSize; // float2
+    private readonly EffectParameter _lightDirection;
+    private readonly EffectParameter _lightingStrength;
+    private readonly EffectParameter _lightingPower;
+    private readonly EffectParameter _lightColor;
 
     private readonly bool _ownsEffect;
 
@@ -39,6 +40,11 @@ public sealed class OrganicDepthShader : IDisposable
         _cameraTiltIntensity = GetRequiredParameter(_effect, "CameraTiltIntensity");
         _cameraZMotionSpeed = GetRequiredParameter(_effect, "CameraZMotionSpeed");
         _screenSize = GetRequiredParameter(_effect, "ScreenSize");
+        _lightDirection = GetRequiredParameter(_effect, "LightDirection");
+        _lightingStrength = GetRequiredParameter(_effect, "LightingStrength");
+        _lightingPower = GetRequiredParameter(_effect, "LightingPower");
+        _lightColor = GetRequiredParameter(_effect, "LightColor");
+        
         _ownsEffect = cloneEffect;
     }
 
@@ -95,6 +101,39 @@ public sealed class OrganicDepthShader : IDisposable
     public void SetScreenSize(int width, int height)
     {
         _screenSize.SetValue(new Vector2(Math.Max(1, width), Math.Max(1, height)));
+    }
+
+    public void SetLightDirection(Vector3 direction)
+    {
+        if (direction.LengthSquared() <= 1e-6f)
+            direction = Vector3.Up;
+        else
+            direction.Normalize();
+
+        _lightDirection.SetValue(direction);
+    }
+
+    public void SetLightingStrength(float ambient, float diffuse, float specular, float rim)
+    {
+        _lightingStrength.SetValue(new Vector4(
+            Math.Max(0f, ambient),
+            Math.Max(0f, diffuse),
+            Math.Max(0f, specular),
+            Math.Max(0f, rim)));
+    }
+
+    public void SetLightingPower(float specularPower, float rimPower)
+    {
+        _lightingPower.SetValue(new Vector2(
+            Math.Max(1f, specularPower),
+            Math.Max(1f, rimPower)));
+    }
+
+    public void SetLightColor(Color color, float intensity = 1f)
+    {
+        var v = color.ToVector4();
+        v.W = Math.Max(0f, intensity);
+        _lightColor.SetValue(v);
     }
 
     private static EffectParameter GetRequiredParameter(Effect effect, string name)
