@@ -9,7 +9,7 @@ public static class BackgroundProfiles
         SurfaceColorIntensity: 0.8f,
         FogColor: Color.HotPink,
         FogColorIntensity: 0.3f,
-        BackgroundColor: Color.HotPink,
+        BackgroundColor: Color.LightPink,
         CameraTiltIntensity: 0.15f,
         CameraZMotionSpeed: 0.5f,
         LightDirection: new Vector3(-0.34f, 0.76f, -0.30f),

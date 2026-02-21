@@ -61,7 +61,7 @@ public class SwarmKC : Game
         _loadingScreen = new Loading(_font, GraphicsDevice);
         
         _backgroundRenderer = new BackgroundRenderer(GraphicsDevice, _spriteBatch, Content);
-        _backgroundRenderer.ApplyBackgroundProfile(BackgroundProfiles.Dark);
+        _backgroundRenderer.ApplyBackgroundProfile(BackgroundProfiles.Light);
 
         Window.ClientSizeChanged += (_, __) => _gameSessionRenderer?.OnViewportChanged();
         
