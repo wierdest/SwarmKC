@@ -43,6 +43,7 @@ public sealed class Loading(SpriteFont font, GraphicsDevice graphicsDevice)
     public void Draw(SpriteBatch spriteBatch, Texture2D pixel, GameTime gameTime)
     {
         EnsureLayout();
+        _graphicsDevice.Clear(Theme.LoadingBackground);
         const string title = "Preparing Battlefield";
         var titleSize = _font.MeasureString(title);
         var msgSize = _font.MeasureString(Message);

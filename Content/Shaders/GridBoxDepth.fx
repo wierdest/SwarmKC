@@ -1,25 +1,26 @@
 #if OPENGL
-// MonoGame maps DirectX semantic names to OpenGL-compatible names when needed.
 #define SV_POSITION POSITION
-// Shader model for OpenGL path.
 #define VS_SHADERMODEL vs_3_0
 #define PS_SHADERMODEL ps_3_0
 #else
-// Shader model for DirectX feature level 9_1 path.
 #define VS_SHADERMODEL vs_4_0_level_9_1
 #define PS_SHADERMODEL ps_4_0_level_9_1
 #endif
 
-// Input texture set from C# (we currently pass a 1x1 white pixel).
+// This provides a grid box on the screen,
+// z-axis camera movement and x-axis tilting,
+// to give off the illusion of depth
+
+// It is the second step in the process of designing a
+// shader appropriate for the background
+
 Texture2D TargetTexture;
 
-// Sampler used to read TargetTexture.
 sampler2D TargetTextureSampler = sampler_state
 {
     Texture = <TargetTexture>;
 };
 
-// Default SpriteBatch vertex output that enters the pixel shader.
 struct VertexShaderOutput
 {
     float4 Position : SV_POSITION;         // Screen-space position for this pixel.
@@ -285,7 +286,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
 }
 
 // Technique name intentionally matches shader purpose.
-technique DepthIllusionWithGridBox
+technique GridBoxDepth
 {
     pass P0
     {
