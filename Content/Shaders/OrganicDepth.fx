@@ -33,6 +33,10 @@ extern float4 BackgroundColor;
 extern float CameraTiltIntensity;
 extern float CameraZMotionSpeed;
 extern float2 ScreenSize;
+extern float3 LightDirection;
+extern float4 LightingStrength; // x=ambiente y=diffuse z=specular w=rim
+extern float2 LightingPower; // x=specularPower, y= rimPower
+extern float4 LightColor; //rgb=color a=intensity
 
 // HASH21 = takes a 2D float returns a pseudo random 1D float.
 static const float2 HASH21_SEED = float2(127.1, 311.7);
@@ -399,13 +403,6 @@ static const float RAY_STEP_MAX = 0.60;
 // Surface sampling
 static const float TISSUE_TEX_SCALE = 2.6;
 
-// Lighting
-static const float3 LIGHT_DIRECTION = float3(-0.34, 0.76, -0.30);
-static const float DIFFUSE_BASE = 0.46;
-static const float DIFFUSE_INCREMENT = 0.54;
-static const float SPECULAR_POWER = 14.0;
-static const float RIM_POWER = 2.0;
-
 // Stratification / contouring
 static const float STRATA_FREQUENCY = 8.0;
 static const float STRATA_CENTER = 0.5;
@@ -490,12 +487,23 @@ float4 MainPS(VertexShaderOutput input) : COLOR
         float hXZ = tissueHeight2D(uvXZ);
         float height = hXY * triBlend.z + hXZ * (triBlend.x + triBlend.y);
 
-        float3 lightDir = normalize(LIGHT_DIRECTION);
-        float3 reflected = reflect(-lightDir, normal);
+        float3 lightDir = normalize(LightDirection);
+        float3 lightColor = saturate(LightColor.rgb) * max(0.0, LightColor.a);
 
-        float diffuse = DIFFUSE_BASE + DIFFUSE_INCREMENT * saturate(abs(dot(normal, lightDir)));
-        float specular = pow(saturate(dot(reflected, viewDir)), SPECULAR_POWER);
-        float rim = pow(1.0 - saturate(dot(normal, viewDir)), RIM_POWER);
+        float ambientStrength  = max(0.0, LightingStrength.x);
+        float diffuseStrength  = max(0.0, LightingStrength.y);
+        float specularStrength = max(0.0, LightingStrength.z);
+        float rimStrength      = max(0.0, LightingStrength.w);
+
+        float specPower = max(1.0, LightingPower.x);
+        float rimPower  = max(1.0, LightingPower.y);
+
+        float ndl = saturate(abs(dot(normal, lightDir)));
+        float diffuse = ambientStrength + diffuseStrength * ndl;
+
+        float3 reflected = reflect(-lightDir, normal);
+        float specular = specularStrength * pow(saturate(dot(reflected, viewDir)), specPower);
+        float rim = rimStrength * pow(1.0 - saturate(dot(normal, viewDir)), rimPower);
 
         float strata = abs(frac(height * STRATA_FREQUENCY) - STRATA_CENTER);
         float contour = 1.0 - smoothstep(CONTOUR_MIN, CONTOUR_MAX, strata);
@@ -508,7 +516,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
         float distFade = exp(-travel * (DISTANCE_FADE_BASE + fogStrength * DISTANCE_FADE_FOG_MULTIPLIER));
         shade *= distFade * surfaceIntensity;
 
-        color = backgroundColor + surfaceColor * shade;
+        color = backgroundColor + (surfaceColor* lightColor) * shade;
 
         float fogAmount = saturate(1.0 - exp(-travel * (FOG_EXPONENTIAL_BASE + fogStrength * FOG_EXPONENTIAL_MULTIPLIER)));
         color = lerp(color, fogColor * FOG_COLOR_MULTIPLIER + FOG_COLOR_OFFSET, fogAmount);
