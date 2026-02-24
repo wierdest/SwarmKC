@@ -46,7 +46,7 @@
       "TargetValue": 1
     }
   },
-  "PlayerRadius": 12,
+  "PlayerRadius": 24,
   "PlayerSpeed": 360,
   "RoundLength": 15
 }
