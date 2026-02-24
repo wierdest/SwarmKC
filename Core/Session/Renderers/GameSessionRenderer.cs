@@ -4,6 +4,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Swarm.Application.Contracts;
 using SwarmKC.Common.Graphics;
+using SwarmKC.Core.Session.Renderers.Background;
+using SwarmKC.Core.Session.Renderers.Player;
 using SwarmKC.UI.Components.Hud;
 
 namespace SwarmKC.Core.Session.Renderers;
@@ -13,15 +15,19 @@ public sealed class GameSessionRenderer(
    GraphicsDevice graphicsDevice,
    SpriteFont font,
    PixelTexture pixelTexture,
-   float width = 960f,
-   float height = 540f,
-   int border = 40)
+   BackgroundRenderer backgroundRenderer,
+   PlayerRenderer playerRenderer,
+   float width,
+   float height,
+   int border) : IDisposable
 {
     private readonly SpriteBatch _spriteBatch = spriteBatch;
     private readonly GraphicsDevice _graphicsDevice = graphicsDevice;
     private readonly SpriteFont _font = font;
     private readonly HudRenderer _hud = new(spriteBatch, font, graphicsDevice);
     private readonly CrosshairRenderer _crosshairRenderer = new(spriteBatch, graphicsDevice);
+    private readonly BackgroundRenderer _backgroundRenderer = backgroundRenderer;
+    private readonly PlayerRenderer _playerRenderer = playerRenderer;
     private readonly Texture2D _pixel = pixelTexture.Value;
     private readonly Dictionary<int, Texture2D> _circleCache = new();
     private Rectangle _drawDestination;
@@ -32,12 +38,16 @@ public sealed class GameSessionRenderer(
     public void Initialize()
     {
         RecalculateDestination();
+        _backgroundRenderer.ApplyBackgroundProfile(BackgroundProfiles.Dark);
+        _playerRenderer.ApplyPlayerProfile(PlayerProfiles.LightHeart);
     }
 
     public void OnViewportChanged() => RecalculateDestination();
 
-    public void Draw(GameSnapshot snap)
+    public void Draw(GameSnapshot snap, float gameTime)
     {
+        _backgroundRenderer.Draw(gameTime);
+
         _spriteBatch.Begin();
 
         foreach (var wall in snap.Walls)
@@ -66,17 +76,11 @@ public sealed class GameSessionRenderer(
             (int)(ta.Radius * 2)),
             snap.TargetAreaIsOpenToPlayer ? Color.SeaGreen : Color.OrangeRed);
 
-        DrawPlayer(
-            new Vector2(snap.Player.X, snap.Player.Y),
-            (int)snap.Player.Radius,
-            snap.Player.RotationAngle,
-            Color.IndianRed);
-
         foreach (var p in snap.Projectiles)
             DrawCircle(new Vector2(p.X, p.Y), (int)p.Radius, Color.OrangeRed);
 
         foreach (var e in snap.Enemies)
-            DrawPlayer(
+            DrawEnemies(
                 new Vector2(e.X, e.Y),
                 (int)e.Radius,
                 e.RotationAngle,
@@ -86,6 +90,13 @@ public sealed class GameSessionRenderer(
 
         _spriteBatch.End();
 
+        DrawPlayer(
+            new Vector2(snap.Player.X, snap.Player.Y),
+            snap.Player.Radius,
+            snap.Player.RotationAngle,
+            gameTime
+        );
+
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
         DrawBorder(_drawDestination, _border, Color.Black);
 
@@ -93,6 +104,7 @@ public sealed class GameSessionRenderer(
         _crosshairRenderer.Draw(snap.AimPositionX, snap.AimPositionY);
 
         _spriteBatch.End();
+
     }
 
     private void RecalculateDestination()
@@ -191,7 +203,12 @@ public sealed class GameSessionRenderer(
         _spriteBatch.Draw(tex, pos, color);
     }
 
-    private void DrawPlayer(Vector2 pos, int radius, float rotation, Color color)
+    private void DrawPlayer(Vector2 pos, float radius, float rotation, float time)
+    {
+        _playerRenderer.Draw(pos, radius, rotation, time);
+    }
+
+    private void DrawEnemies(Vector2 pos, int radius, float rotation, Color color)
     {
         _spriteBatch.Draw(
             _pixel,
@@ -221,5 +238,9 @@ public sealed class GameSessionRenderer(
         _spriteBatch.Draw(_pixel, new Rectangle(rect.X + rect.Width - thickness, rect.Y, thickness, rect.Height), color);
     }
 
-
+    public void Dispose()
+    {
+        _backgroundRenderer.Dispose();
+        _playerRenderer.Dispose();
+    }
 }

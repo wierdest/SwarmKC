@@ -38,3 +38,9 @@
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
 /build:Shaders/OrganicDepth.fx
+
+#begin Shaders/PlayerCell.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/PlayerCell.fx

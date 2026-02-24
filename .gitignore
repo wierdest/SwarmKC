@@ -486,6 +486,7 @@ $RECYCLE.BIN/
 # MonoGame / MGCB
 *.mgcbintermediate
 *.xnb
+*.mgstats
 
 # Local libs (binary dependencies)
 libs/

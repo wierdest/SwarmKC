@@ -8,7 +8,7 @@ using SwarmKC.Core;
 using SwarmKC.Core.Session;
 using SwarmKC.Core.Session.Renderers;
 using SwarmKC.Core.Session.Renderers.Background;
-using SwarmKC.UI;
+using SwarmKC.Core.Session.Renderers.Player;
 using SwarmKC.UI.Screens;
 
 namespace SwarmKC;
@@ -17,19 +17,13 @@ public class SwarmKC : Game
 { 
     private readonly GraphicsDeviceManager _graphics;
     private readonly GameSessionManager _sessionManager;
-    private int _appliedPresentationVersion = -1;
-
     private SpriteBatch _spriteBatch = null!;
     private PixelTexture _pixelTexture = null!;
     private SpriteFont _font = null!;
-
     private Title _titleScreen = null!;
     private Loading _loadingScreen = null!;
     private GameSessionRenderer _gameSessionRenderer = null!;
-    private BackgroundRenderer _backgroundRenderer = null!;
-
     private States _state = States.TITLE;
-
     private KeyboardState _prevKb;
 
     public SwarmKC(GameSessionManager sessionManager)
@@ -60,14 +54,28 @@ public class SwarmKC : Game
         _titleScreen = new Title(_font, GraphicsDevice);
         _loadingScreen = new Loading(_font, GraphicsDevice);
         
-        _backgroundRenderer = new BackgroundRenderer(GraphicsDevice, _spriteBatch, Content);
-        _backgroundRenderer.ApplyBackgroundProfile(BackgroundProfiles.Light);
 
         Window.ClientSizeChanged += (_, __) => _gameSessionRenderer?.OnViewportChanged();
         
         SetState(States.TITLE);
 
-        TryApplySessionPresentationConfig();
+        ApplySessionPresentationConfig();
+
+        // Profiles decision should come from game session configs or from saved settings.
+        // these should be passed in a yet to be created data structure GameSessionSettings
+        // 
+        _gameSessionRenderer = new GameSessionRenderer(
+            _spriteBatch,
+            GraphicsDevice,
+            _font,
+            _pixelTexture,
+            new BackgroundRenderer(GraphicsDevice, _spriteBatch, Content),
+            new PlayerRenderer(GraphicsDevice, _spriteBatch, Content),
+            _sessionManager.StageWidth,
+            _sessionManager.StageHeight,
+            _sessionManager.BorderSize);
+
+        _gameSessionRenderer.Initialize();
 
         base.LoadContent();
     }
@@ -115,7 +123,6 @@ public class SwarmKC : Game
 
                 if (_loadingScreen.IsCompleted)
                 {
-                    TryApplySessionPresentationConfig();
                     SetState(States.PLAYING);
                 }
                 return;
@@ -124,7 +131,6 @@ public class SwarmKC : Game
             {
                 var dt = MathF.Min((float)gameTime.ElapsedGameTime.TotalSeconds, 0.05f);
                 _sessionManager.UpdatePlaying(dt, Content.RootDirectory);
-                TryApplySessionPresentationConfig();
                 return;
             }
       
@@ -156,21 +162,11 @@ public class SwarmKC : Game
                     GraphicsDevice.Clear(Color.Black);
                     return;
                 }
-                _backgroundRenderer.Draw((float)gameTime.TotalGameTime.TotalSeconds);
-                _gameSessionRenderer.Draw(_sessionManager.GetSnapshot());
+                _gameSessionRenderer.Draw(_sessionManager.GetSnapshot(), (float)gameTime.TotalGameTime.TotalSeconds);
                 return;
         }
        
         base.Draw(gameTime);
-    }
-
-    private void TryApplySessionPresentationConfig()
-    {
-        if (_appliedPresentationVersion == _sessionManager.PresentationConfigVersion)
-            return;
-
-        ApplySessionPresentationConfig();
-        _appliedPresentationVersion = _sessionManager.PresentationConfigVersion;
     }
 
     private void ApplySessionPresentationConfig()
@@ -184,22 +180,6 @@ public class SwarmKC : Game
             _graphics.PreferredBackBufferHeight = h;
             _graphics.ApplyChanges();
         }
-
-        CreateOrRecreateSessionRenderer();
-    }
-
-    private void CreateOrRecreateSessionRenderer()
-    {
-        _gameSessionRenderer = new GameSessionRenderer(
-            _spriteBatch,
-            GraphicsDevice,
-            _font,
-            _pixelTexture,
-            _sessionManager.StageWidth,
-            _sessionManager.StageHeight,
-            _sessionManager.BorderSize);
-
-        _gameSessionRenderer.Initialize();
     }
 
     private void SetState(States next)
@@ -240,7 +220,7 @@ public class SwarmKC : Game
 
     protected override void UnloadContent()
     {
-        _backgroundRenderer?.Dispose();
+        _gameSessionRenderer.Dispose();
         base.UnloadContent();
     }
 
