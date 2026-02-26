@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace SwarmKC.Core.Session.Renderers.Shaders;
 
-public sealed class OrganicDepthShader : IDisposable
+public sealed class BackgroundShader : IDisposable
 {
     public const string DefaultAssetName = "Shaders/OrganicDepth";
 
@@ -27,7 +27,7 @@ public sealed class OrganicDepthShader : IDisposable
 
     private readonly bool _ownsEffect;
 
-    public OrganicDepthShader(Effect effect, bool cloneEffect = true)
+    public BackgroundShader(Effect effect, bool cloneEffect = true)
     {
         ArgumentNullException.ThrowIfNull(effect);
 
@@ -48,13 +48,13 @@ public sealed class OrganicDepthShader : IDisposable
         _ownsEffect = cloneEffect;
     }
 
-    public static OrganicDepthShader Load(
+    public static BackgroundShader Load(
         ContentManager content,
         string assetName = DefaultAssetName,
         bool cloneEffect = true)
     {
         ArgumentNullException.ThrowIfNull(content);
-        return new OrganicDepthShader(content.Load<Effect>(assetName), cloneEffect);
+        return new BackgroundShader(content.Load<Effect>(assetName), cloneEffect);
     }
 
     public void SetTexture(Texture2D texture)

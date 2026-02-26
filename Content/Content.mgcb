@@ -20,27 +20,14 @@
 /processorParam:TextureFormat=Compressed
 /build:DefaultFont.spritefont
 
-
-#begin Shaders/HelloWorld.fx
-/importer:EffectImporter
-/processor:EffectProcessor
-/processorParam:DebugMode=Auto
-/build:Shaders/HelloWorld.fx
-
-#begin Shaders/GridBoxDepth.fx
-/importer:EffectImporter
-/processor:EffectProcessor
-/processorParam:DebugMode=Auto
-/build:Shaders/GridBoxDepth.fx
-
 #begin Shaders/OrganicDepth.fx
 /importer:EffectImporter
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
 /build:Shaders/OrganicDepth.fx
 
-#begin Shaders/PlayerCell.fx
+#begin Shaders/CilliatedCellWithSymbolNucleus.fx
 /importer:EffectImporter
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
-/build:Shaders/PlayerCell.fx
+/build:Shaders/CilliatedCellWithSymbolNucleus.fx

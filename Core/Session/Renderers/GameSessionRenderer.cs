@@ -14,7 +14,7 @@ public sealed class GameSessionRenderer(
    SpriteBatch spriteBatch,
    GraphicsDevice graphicsDevice,
    SpriteFont font,
-   PixelTexture pixelTexture,
+   Texture2D pixel,
    BackgroundRenderer backgroundRenderer,
    PlayerRenderer playerRenderer,
    float width,
@@ -28,7 +28,7 @@ public sealed class GameSessionRenderer(
     private readonly CrosshairRenderer _crosshairRenderer = new(spriteBatch, graphicsDevice);
     private readonly BackgroundRenderer _backgroundRenderer = backgroundRenderer;
     private readonly PlayerRenderer _playerRenderer = playerRenderer;
-    private readonly Texture2D _pixel = pixelTexture.Value;
+    private readonly Texture2D _pixel = pixel;
     private readonly Dictionary<int, Texture2D> _circleCache = new();
     private Rectangle _drawDestination;
     private readonly float _width = width;

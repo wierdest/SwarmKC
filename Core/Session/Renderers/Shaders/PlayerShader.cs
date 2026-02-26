@@ -5,9 +5,9 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace SwarmKC.Core.Session.Renderers.Shaders;
 
-public sealed class PlayerCellShader : IDisposable
+public sealed class PlayerShader : IDisposable
 {
-    public const string DefaultAssetName = "Shaders/PlayerCell";
+    public const string DefaultAssetName = "Shaders/CilliatedCellWithSymbolNucleus";
 
     private readonly Effect _effect;
     public Effect Effect => _effect;
@@ -25,7 +25,7 @@ public sealed class PlayerCellShader : IDisposable
 
     private readonly bool _ownsEffect;
 
-    public PlayerCellShader(Effect effect, bool cloneEffect = true)
+    public PlayerShader(Effect effect, bool cloneEffect = true)
     {
         ArgumentNullException.ThrowIfNull(effect);
 
@@ -43,13 +43,13 @@ public sealed class PlayerCellShader : IDisposable
         _ownsEffect = cloneEffect;
     }
 
-    public static PlayerCellShader Load(
+    public static PlayerShader Load(
         ContentManager content,
         string assetName = DefaultAssetName,
         bool cloneEffect = true)
     {
         ArgumentNullException.ThrowIfNull(content);
-        return new PlayerCellShader(content.Load<Effect>(assetName), cloneEffect);
+        return new PlayerShader(content.Load<Effect>(assetName), cloneEffect);
     }
 
     public void SetTexture(Texture2D texture)
