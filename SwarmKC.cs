@@ -69,7 +69,7 @@ public class SwarmKC : Game
             _font,
             _pixel,
             new BackgroundRenderer(GraphicsDevice, _spriteBatch, Content, _pixel),
-            new PlayerRenderer(GraphicsDevice, _spriteBatch, Content, _pixel),
+            new PlayerRenderer(_spriteBatch, Content, _pixel),
             _sessionManager.StageWidth,
             _sessionManager.StageHeight,
             _sessionManager.BorderSize);
