@@ -10,10 +10,10 @@
       "Name": "",
       "Damage": 1,
       "MaxAmmo": 1000,
-      "RatePerSecond": 60,
+      "RatePerSecond": 10,
       "ProjectileSpeed": 840,
-      "ProjectileRadius": 16,
-      "ProjectileLifetimeSeconds": 10
+      "ProjectileRadius": 8,
+      "ProjectileLifetimeSeconds": 2
     },
     "PlayerAreaConfig": {
       "X": 80,

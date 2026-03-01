@@ -6,28 +6,22 @@ using SwarmKC.Core.Session.Renderers.Shaders;
 
 namespace SwarmKC.Core.Session.Renderers.Background;
 
-public sealed class BackgroundRenderer : IDisposable
+public sealed class BackgroundRenderer(
+    GraphicsDevice graphicsDevice, 
+    SpriteBatch spriteBatch, 
+    BackgroundShader shader, 
+    Texture2D pixel, 
+    bool ownsShader = false) : IDisposable
 {
-    private readonly GraphicsDevice _graphicsDevice;
-    private readonly SpriteBatch _spriteBatch;
-    private readonly OrganicDepthShader _shader;
-    private readonly bool _ownsShader;
-    private readonly Texture2D _pixel;
+    private readonly GraphicsDevice _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
+    private readonly SpriteBatch _spriteBatch = spriteBatch ?? throw new ArgumentNullException(nameof(spriteBatch));
+    private readonly BackgroundShader _shader = shader ?? throw new ArgumentNullException(nameof(shader));
+    private readonly bool _ownsShader = ownsShader;
+    private readonly Texture2D _pixel = pixel;
 
-    public BackgroundRenderer(GraphicsDevice graphicsDevice, SpriteBatch spriteBatch, ContentManager content)
-        : this(graphicsDevice, spriteBatch, OrganicDepthShader.Load(content), ownsShader: true)
+    public BackgroundRenderer(GraphicsDevice graphicsDevice, SpriteBatch spriteBatch, ContentManager content, Texture2D pixel)
+        : this(graphicsDevice, spriteBatch, BackgroundShader.Load(content), pixel, ownsShader: true)
     {
-    }
-
-    public BackgroundRenderer(GraphicsDevice graphicsDevice, SpriteBatch spriteBatch, OrganicDepthShader shader, bool ownsShader = false)
-    {
-        _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
-        _spriteBatch = spriteBatch ?? throw new ArgumentNullException(nameof(spriteBatch));
-        _shader = shader ?? throw new ArgumentNullException(nameof(shader));
-        _ownsShader = ownsShader;
-
-        _pixel = new Texture2D(_graphicsDevice, 1, 1);
-        _pixel.SetData([Color.White]);
     }
 
     public void Draw(float timeSeconds)
@@ -70,7 +64,6 @@ public sealed class BackgroundRenderer : IDisposable
 
         _shader.SetLightColor(profile.LightColor, profile.LightColorIntensity);
     }
-
 
     public void Dispose()
     {

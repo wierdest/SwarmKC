@@ -61,7 +61,7 @@ void drawHeart(float2 symbolP, out float fill, out float outline)
     float h = hx * hx + hy * hy - 1.0;
     float heartField = h * h * h - hx * hx * hy * hy * hy; // <= 0 is inside
 
-    fill = 1.0 - smoothstep(-0.10, 0.03, heartField);
+    fill = 1.0 - smoothstep(-0.10, 0.06, heartField);
     outline = 1.0 - smoothstep(0.0, 0.09, abs(heartField));
 }
 
@@ -239,7 +239,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     return float4(outRgb, alpha);
 }
 
-technique PlayerCell
+technique CilliatedCellWithSymbolNucleus
 {
     pass P0
     {

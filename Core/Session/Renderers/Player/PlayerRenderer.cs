@@ -6,30 +6,20 @@ using SwarmKC.Core.Session.Renderers.Shaders;
 
 namespace SwarmKC.Core.Session.Renderers.Player;
 
-public sealed class PlayerRenderer : IDisposable
+public sealed class PlayerRenderer(
+    SpriteBatch spriteBatch,
+    PlayerShader shader,
+    Texture2D pixel, 
+    bool ownsShader = false) : IDisposable
 {
-    private readonly GraphicsDevice _graphicsDevice;
-    private readonly SpriteBatch _spriteBatch;
-    private readonly PlayerCellShader _shader;
-    private readonly bool _ownsShader;
-    private readonly Texture2D _pixel;
+    private readonly SpriteBatch _spriteBatch = spriteBatch ?? throw new ArgumentNullException(nameof(spriteBatch));
+    private readonly PlayerShader _shader = shader ?? throw new ArgumentNullException(nameof(shader));
+    private readonly bool _ownsShader = ownsShader;
+    private readonly Texture2D _pixel = pixel;
 
-    public PlayerRenderer(GraphicsDevice graphicsDevice, SpriteBatch spriteBatch, ContentManager content)
-        : this(graphicsDevice, spriteBatch, PlayerCellShader.Load(content), ownsShader: true)
+    public PlayerRenderer(SpriteBatch spriteBatch, ContentManager content, Texture2D pixel)
+        : this(spriteBatch, PlayerShader.Load(content), pixel, ownsShader: true)
     {
-    }
-
-    public PlayerRenderer(GraphicsDevice graphicsDevice, SpriteBatch spriteBatch, PlayerCellShader shader, bool ownsShader = false)
-    {
-        _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
-        _spriteBatch = spriteBatch ?? throw new ArgumentNullException(nameof(spriteBatch));
-        _shader = shader ?? throw new ArgumentNullException(nameof(shader));
-        _ownsShader = ownsShader;
-
-        _pixel = new Texture2D(_graphicsDevice, 1, 1);
-        _pixel.SetData([Color.White]);
-
-        ApplyPlayerProfile(PlayerProfiles.LightHeart);
     }
 
     public void ApplyPlayerProfile(PlayerProfile profile)

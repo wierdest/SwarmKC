@@ -9,6 +9,7 @@ using SwarmKC.Core.Session;
 using SwarmKC.Core.Session.Renderers;
 using SwarmKC.Core.Session.Renderers.Background;
 using SwarmKC.Core.Session.Renderers.Player;
+using SwarmKC.Core.Session.Renderers.Projectiles;
 using SwarmKC.UI.Screens;
 
 namespace SwarmKC;
@@ -18,7 +19,7 @@ public class SwarmKC : Game
     private readonly GraphicsDeviceManager _graphics;
     private readonly GameSessionManager _sessionManager;
     private SpriteBatch _spriteBatch = null!;
-    private PixelTexture _pixelTexture = null!;
+    private Texture2D _pixel = null!;
     private SpriteFont _font = null!;
     private Title _titleScreen = null!;
     private Loading _loadingScreen = null!;
@@ -49,7 +50,7 @@ public class SwarmKC : Game
     protected override void LoadContent()
     {
         _font = Content.Load<SpriteFont>("DefaultFont");
-        _pixelTexture = new PixelTexture(GraphicsDevice);
+        _pixel = new PixelTexture(GraphicsDevice).Value;
 
         _titleScreen = new Title(_font, GraphicsDevice);
         _loadingScreen = new Loading(_font, GraphicsDevice);
@@ -63,14 +64,14 @@ public class SwarmKC : Game
 
         // Profiles decision should come from game session configs or from saved settings.
         // these should be passed in a yet to be created data structure GameSessionSettings
-        // 
         _gameSessionRenderer = new GameSessionRenderer(
             _spriteBatch,
             GraphicsDevice,
             _font,
-            _pixelTexture,
-            new BackgroundRenderer(GraphicsDevice, _spriteBatch, Content),
-            new PlayerRenderer(GraphicsDevice, _spriteBatch, Content),
+            _pixel,
+            new BackgroundRenderer(GraphicsDevice, _spriteBatch, Content, _pixel),
+            new PlayerRenderer(_spriteBatch, Content, _pixel),
+            new ProjectilesRenderer(GraphicsDevice, _spriteBatch, Content, _pixel),
             _sessionManager.StageWidth,
             _sessionManager.StageHeight,
             _sessionManager.BorderSize);
@@ -146,13 +147,13 @@ public class SwarmKC : Game
             case States.TITLE:
 
                 _spriteBatch.Begin();
-                _titleScreen.Draw(_spriteBatch, _pixelTexture.Value);
+                _titleScreen.Draw(_spriteBatch, _pixel);
                 _spriteBatch.End();
                 return;
 
             case States.LOADING:
                 _spriteBatch.Begin();
-                _loadingScreen.Draw(_spriteBatch, _pixelTexture.Value, gameTime);
+                _loadingScreen.Draw(_spriteBatch, _pixel, gameTime);
                 _spriteBatch.End();
                 return;
 
