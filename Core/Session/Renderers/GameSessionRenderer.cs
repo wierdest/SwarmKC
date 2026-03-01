@@ -6,6 +6,7 @@ using Swarm.Application.Contracts;
 using SwarmKC.Common.Graphics;
 using SwarmKC.Core.Session.Renderers.Background;
 using SwarmKC.Core.Session.Renderers.Player;
+using SwarmKC.Core.Session.Renderers.Projectiles;
 using SwarmKC.UI.Components.Hud;
 
 namespace SwarmKC.Core.Session.Renderers;
@@ -17,6 +18,7 @@ public sealed class GameSessionRenderer(
    Texture2D pixel,
    BackgroundRenderer backgroundRenderer,
    PlayerRenderer playerRenderer,
+   ProjectilesRenderer projectilesRenderer,
    float width,
    float height,
    int border) : IDisposable
@@ -28,6 +30,7 @@ public sealed class GameSessionRenderer(
     private readonly CrosshairRenderer _crosshairRenderer = new(spriteBatch, graphicsDevice);
     private readonly BackgroundRenderer _backgroundRenderer = backgroundRenderer;
     private readonly PlayerRenderer _playerRenderer = playerRenderer;
+    private readonly ProjectilesRenderer _projectilesRenderer = projectilesRenderer;
     private readonly Texture2D _pixel = pixel;
     private readonly Dictionary<int, Texture2D> _circleCache = new();
     private Rectangle _drawDestination;
@@ -39,7 +42,16 @@ public sealed class GameSessionRenderer(
     {
         RecalculateDestination();
         _backgroundRenderer.ApplyBackgroundProfile(BackgroundProfiles.Dark);
-        _playerRenderer.ApplyPlayerProfile(PlayerProfiles.LightHeart);
+        PlayerProfile playerProfile = PlayerProfiles.LightHeart;
+        _playerRenderer.ApplyPlayerProfile(playerProfile);
+        ProjectileProfile playerProjectileProfile = new(
+            SymbolColor: playerProfile.SymbolColor,
+            SymbolColorIntensity: playerProfile.SymbolColorIntensity,
+            SymbolType: playerProfile.SymbolType
+        );
+        _projectilesRenderer.ApplyPlayerProfile(playerProjectileProfile);
+
+        
     }
 
     public void OnViewportChanged() => RecalculateDestination();
@@ -76,8 +88,6 @@ public sealed class GameSessionRenderer(
             (int)(ta.Radius * 2)),
             snap.TargetAreaIsOpenToPlayer ? Color.SeaGreen : Color.OrangeRed);
 
-        foreach (var p in snap.Projectiles)
-            DrawCircle(new Vector2(p.X, p.Y), (int)p.Radius, Color.OrangeRed);
 
         foreach (var e in snap.Enemies)
             DrawEnemies(
@@ -96,6 +106,16 @@ public sealed class GameSessionRenderer(
             snap.Player.RotationAngle,
             gameTime
         );
+
+        foreach (var p in snap.Projectiles)
+        {
+            _projectilesRenderer.Draw(
+                new Vector2(p.X, p.Y),
+                p.Radius,
+                rotationRadians: gameTime * 2.0f,
+                timeSeconds: gameTime,
+                ownedByPlayer: p.IsOwnedByPlayer);
+        }
 
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
         DrawBorder(_drawDestination, _border, Color.Black);

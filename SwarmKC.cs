@@ -9,6 +9,7 @@ using SwarmKC.Core.Session;
 using SwarmKC.Core.Session.Renderers;
 using SwarmKC.Core.Session.Renderers.Background;
 using SwarmKC.Core.Session.Renderers.Player;
+using SwarmKC.Core.Session.Renderers.Projectiles;
 using SwarmKC.UI.Screens;
 
 namespace SwarmKC;
@@ -70,6 +71,7 @@ public class SwarmKC : Game
             _pixel,
             new BackgroundRenderer(GraphicsDevice, _spriteBatch, Content, _pixel),
             new PlayerRenderer(_spriteBatch, Content, _pixel),
+            new ProjectilesRenderer(GraphicsDevice, _spriteBatch, Content, _pixel),
             _sessionManager.StageWidth,
             _sessionManager.StageHeight,
             _sessionManager.BorderSize);
