@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Swarm.Application.Contracts;
 using SwarmKC.Common.Graphics;
+using SwarmKC.Core.Session.Renderers.Areas;
 using SwarmKC.Core.Session.Renderers.Background;
 using SwarmKC.Core.Session.Renderers.Player;
 using SwarmKC.Core.Session.Renderers.Projectiles;
@@ -19,6 +20,8 @@ public sealed class GameSessionRenderer(
    BackgroundRenderer backgroundRenderer,
    PlayerRenderer playerRenderer,
    ProjectilesRenderer projectilesRenderer,
+   PlayerAreaRenderer playerAreaRenderer,
+   TargetAreaRenderer targetAreaRenderer,
    float width,
    float height,
    int border) : IDisposable
@@ -31,8 +34,10 @@ public sealed class GameSessionRenderer(
     private readonly BackgroundRenderer _backgroundRenderer = backgroundRenderer;
     private readonly PlayerRenderer _playerRenderer = playerRenderer;
     private readonly ProjectilesRenderer _projectilesRenderer = projectilesRenderer;
+    private readonly PlayerAreaRenderer _playerAreaRenderer = playerAreaRenderer;
+    private readonly TargetAreaRenderer _targetAreaRenderer = targetAreaRenderer;
     private readonly Texture2D _pixel = pixel;
-    private readonly Dictionary<int, Texture2D> _circleCache = new();
+    private readonly Dictionary<int, Texture2D> _circleCache = [];
     private Rectangle _drawDestination;
     private readonly float _width = width;
     private readonly float _height = height;
@@ -41,7 +46,7 @@ public sealed class GameSessionRenderer(
     public void Initialize()
     {
         RecalculateDestination();
-        _backgroundRenderer.ApplyBackgroundProfile(BackgroundProfiles.Dark);
+        _backgroundRenderer.ApplyBackgroundProfile(BackgroundProfiles.Light);
         PlayerProfile playerProfile = PlayerProfiles.LightHeart;
         _playerRenderer.ApplyPlayerProfile(playerProfile);
         ProjectileProfile playerProjectileProfile = new(
@@ -50,7 +55,10 @@ public sealed class GameSessionRenderer(
             SymbolType: playerProfile.SymbolType
         );
         _projectilesRenderer.ApplyPlayerProfile(playerProjectileProfile);
-
+        var playerAreaProfile = AreaProfiles.PlayerAreaLight;
+        _playerAreaRenderer.ApplyProfile(playerAreaProfile);
+        _targetAreaRenderer.ApplyProfile(AreaProfiles.TargetAreaLight);
+        _targetAreaRenderer.SetOpenBaseColor(playerAreaProfile.BaseColor);
         
     }
 
@@ -72,22 +80,6 @@ public sealed class GameSessionRenderer(
                 Color.Gray);
         }
 
-        var pa = snap.PlayerArea;
-        DrawRect(new Rectangle(
-            (int)(pa.X - pa.Radius),
-            (int)(pa.Y - pa.Radius),
-            (int)(pa.Radius * 2),
-            (int)(pa.Radius * 2)),
-            Color.Blue);
-
-        var ta = snap.TargetArea;
-        DrawRect(new Rectangle(
-            (int)(ta.X - ta.Radius),
-            (int)(ta.Y - ta.Radius),
-            (int)(ta.Radius * 2),
-            (int)(ta.Radius * 2)),
-            snap.TargetAreaIsOpenToPlayer ? Color.SeaGreen : Color.OrangeRed);
-
 
         foreach (var e in snap.Enemies)
             DrawEnemies(
@@ -99,6 +91,20 @@ public sealed class GameSessionRenderer(
         DrawOverlayTextIfNeeded(snap);
 
         _spriteBatch.End();
+
+        var pa = snap.PlayerArea;
+        _playerAreaRenderer.Draw(
+            new Vector2(pa.X, pa.Y),
+            pa.Radius,
+            gameTime);
+
+        var ta = snap.TargetArea;
+        _targetAreaRenderer.Draw(
+            new Vector2(ta.X, ta.Y),
+            ta.Radius,
+            gameTime,
+            snap.TargetAreaIsOpenToPlayer
+        );
 
         DrawPlayer(
             new Vector2(snap.Player.X, snap.Player.Y),
