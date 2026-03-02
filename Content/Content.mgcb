@@ -37,3 +37,9 @@
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
 /build:Shaders/Symbol.fx
+
+#begin Shaders/CilliatedCell.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/CilliatedCell.fx
