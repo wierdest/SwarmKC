@@ -81,8 +81,7 @@ void drawStar(float2 symbolP, out float fill, out float outline)
 void drawSymbol(
     inout float3 color,
     float symbolType,
-    float2 ps,
-    float2 nucleusCenter,
+    float2 symbolP,
     float nucleusOuter,
     float nucleusMask,
     float3 symbolRgb,
@@ -90,9 +89,6 @@ void drawSymbol(
     float3 neonRgb,
     float symbolPulse)
 {
-    float2 symbolP = (ps - nucleusCenter) / max(0.001, nucleusOuter * 0.42);
-    symbolP.y += 0.12;
-
     float fill = 0.0;
     float outline = 0.0;
 
@@ -207,11 +203,18 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     color = lerp(color, nucleusTint, nucleus * 0.90);
 
     float symbolPulse = 0.5 + 0.5 * sin(Time * 3.1 + dot(CellPosition, float2(0.023, 0.019)));
+    float nucleusSpin = Time * 1.65 + dot(CellPosition, float2(0.019, 0.027));
+    float cs = cos(nucleusSpin);
+    float ss = sin(nucleusSpin);
+    float2 nucleusLocal = ps - nucleusCenter;
+    float2 symbolP = float2(
+        cs * nucleusLocal.x - ss * nucleusLocal.y,
+        ss * nucleusLocal.x + cs * nucleusLocal.y) / max(0.001, nucleusOuter * 0.42);
+    symbolP.y += 0.12;
     drawSymbol(
         color,
         symbolType,
-        ps,
-        nucleusCenter,
+        symbolP,
         nucleusOuter,
         nucleus,
         symbolRgb,
