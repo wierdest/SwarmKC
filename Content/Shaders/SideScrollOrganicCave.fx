@@ -7,6 +7,12 @@
 #define PS_SHADERMODEL ps_4_0_level_9_1
 #endif
 
+// This is very much like the implementation of the first organic depth shader,
+// only thing is that the raymarching has a fixed setup, so we do not have forward movement illusion
+// instead, we have an infinite side scrolling movement
+
+// This texture is unused and is optimized out,
+// leaving here just to keep the pattern of a shader
 Texture2D TargetTexture;
 
 sampler2D TargetTextureSampler = sampler_state
@@ -153,7 +159,7 @@ float3 sceneNormal(float3 p)
     return normalize(g);
 }
 
-// Fixed ray setup (no camera movement, no tilt).
+// Fixed ray setup
 static const float3 FIXED_RAY_ORIGIN = float3(0.0, 1.20, -2.2);
 static const float3 FIXED_FORWARD = normalize(float3(0.0, 0.0, 1.0));
 static const float3 FIXED_RIGHT = normalize(float3(1.0, 0.0, 0.0));
