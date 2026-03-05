@@ -9,7 +9,7 @@ public sealed record BackgroundProfile(
     float FogColorIntensity,
     Color BackgroundColor,
     float CameraTiltIntensity,
-    float CameraZMotionSpeed,
+    float CameraXMotionSpeed,
     Vector3 LightDirection,
     Vector4 LightingStrength,
     Vector2 LightingPower,

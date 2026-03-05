@@ -7,19 +7,18 @@ namespace SwarmKC.Core.Session.Renderers.Shaders;
 
 public sealed class BackgroundShader : IDisposable
 {
-    public const string DefaultAssetName = "Shaders/OrganicDepth";
+    public const string DefaultAssetName = "Shaders/SideScrollOrganicCave";
 
     private readonly Effect _effect;
     public Effect Effect => _effect;
 
     private readonly EffectParameter _targetTexture;
     private readonly EffectParameter _time;
-    private readonly EffectParameter _surfaceColor; // float4: rgb=color, a=intensity
-    private readonly EffectParameter _fogColor; // float4: rgb=color, a=intensity
-    private readonly EffectParameter _backgroundColor; // float4: rgb=clear/background color
-    private readonly EffectParameter _cameraTiltIntensity; // float: 0..1
-    private readonly EffectParameter _cameraZMotionSpeed; // float: >= 0
-    private readonly EffectParameter _screenSize; // float2
+    private readonly EffectParameter _surfaceColor;
+    private readonly EffectParameter _fogColor;
+    private readonly EffectParameter _backgroundColor;
+    private readonly EffectParameter _cameraXMotionSpeed;
+    private readonly EffectParameter _screenSize;
     private readonly EffectParameter _lightDirection;
     private readonly EffectParameter _lightingStrength;
     private readonly EffectParameter _lightingPower;
@@ -37,14 +36,13 @@ public sealed class BackgroundShader : IDisposable
         _surfaceColor = GetRequiredParameter(_effect, "SurfaceColor");
         _fogColor = GetRequiredParameter(_effect, "FogColor");
         _backgroundColor = GetRequiredParameter(_effect, "BackgroundColor");
-        _cameraTiltIntensity = GetRequiredParameter(_effect, "CameraTiltIntensity");
-        _cameraZMotionSpeed = GetRequiredParameter(_effect, "CameraZMotionSpeed");
+        _cameraXMotionSpeed = GetRequiredParameter(_effect, "CameraXMotionSpeed");
         _screenSize = GetRequiredParameter(_effect, "ScreenSize");
         _lightDirection = GetRequiredParameter(_effect, "LightDirection");
         _lightingStrength = GetRequiredParameter(_effect, "LightingStrength");
         _lightingPower = GetRequiredParameter(_effect, "LightingPower");
         _lightColor = GetRequiredParameter(_effect, "LightColor");
-        
+
         _ownsEffect = cloneEffect;
     }
 
@@ -59,14 +57,13 @@ public sealed class BackgroundShader : IDisposable
 
     public void SetTexture(Texture2D texture)
     {
-        if (_targetTexture is null) return;
         ArgumentNullException.ThrowIfNull(texture);
         _targetTexture.SetValue(texture);
     }
 
     public void SetTime(float seconds)
     {
-        _time.SetValue(seconds);
+        _time?.SetValue(seconds);
     }
 
     public void SetSurfaceColor(Color color, float intensity = 1f)
@@ -85,22 +82,17 @@ public sealed class BackgroundShader : IDisposable
 
     public void SetBackgroundColor(Color color)
     {
-        _backgroundColor.SetValue(color.ToVector4());
+        _backgroundColor?.SetValue(color.ToVector4());
     }
 
-    public void SetCameraTiltIntensity(float value)
+    public void SetCameraXMotionSpeed(float value)
     {
-        _cameraTiltIntensity.SetValue(Math.Clamp(value, 0f, 1f));
-    }
-
-    public void SetCameraZMotionSpeed(float value)
-    {
-        _cameraZMotionSpeed.SetValue(Math.Max(0f, value));
+        _cameraXMotionSpeed?.SetValue(Math.Max(0f, value));
     }
 
     public void SetScreenSize(int width, int height)
     {
-        _screenSize.SetValue(new Vector2(Math.Max(1, width), Math.Max(1, height)));
+        _screenSize?.SetValue(new Vector2(Math.Max(1, width), Math.Max(1, height)));
     }
 
     public void SetLightDirection(Vector3 direction)
@@ -115,7 +107,7 @@ public sealed class BackgroundShader : IDisposable
 
     public void SetLightingStrength(float ambient, float diffuse, float specular, float rim)
     {
-        _lightingStrength.SetValue(new Vector4(
+        _lightingStrength?.SetValue(new Vector4(
             Math.Max(0f, ambient),
             Math.Max(0f, diffuse),
             Math.Max(0f, specular),
@@ -124,13 +116,16 @@ public sealed class BackgroundShader : IDisposable
 
     public void SetLightingPower(float specularPower, float rimPower)
     {
-        _lightingPower.SetValue(new Vector2(
+        _lightingPower?.SetValue(new Vector2(
             Math.Max(1f, specularPower),
             Math.Max(1f, rimPower)));
     }
 
     public void SetLightColor(Color color, float intensity = 1f)
     {
+        if (_lightColor is null)
+            return;
+
         var v = color.ToVector4();
         v.W = Math.Max(0f, intensity);
         _lightColor.SetValue(v);

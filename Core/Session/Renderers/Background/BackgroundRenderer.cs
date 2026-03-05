@@ -48,8 +48,7 @@ public sealed class BackgroundRenderer(
         _shader.SetSurfaceColor(profile.SurfaceColor, profile.SurfaceColorIntensity);
         _shader.SetFogColor(profile.FogColor, profile.FogColorIntensity);
         _shader.SetBackgroundColor(profile.BackgroundColor);
-        _shader.SetCameraTiltIntensity(profile.CameraTiltIntensity);
-        _shader.SetCameraZMotionSpeed(profile.CameraZMotionSpeed);
+        _shader.SetCameraXMotionSpeed(profile.CameraXMotionSpeed);
 
         _shader.SetLightDirection(profile.LightDirection);
         _shader.SetLightingStrength(
