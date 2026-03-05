@@ -43,3 +43,9 @@
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
 /build:Shaders/CilliatedCell.fx
+
+#begin Shaders/SideScrollOrganicCave.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/SideScrollOrganicCave.fx

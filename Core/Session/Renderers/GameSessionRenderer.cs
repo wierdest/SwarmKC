@@ -46,7 +46,7 @@ public sealed class GameSessionRenderer(
     public void Initialize()
     {
         RecalculateDestination();
-        _backgroundRenderer.ApplyBackgroundProfile(BackgroundProfiles.Light);
+        _backgroundRenderer.ApplyBackgroundProfile(BackgroundProfiles.Dark);
         PlayerProfile playerProfile = PlayerProfiles.LightHeart;
         _playerRenderer.ApplyPlayerProfile(playerProfile);
         ProjectileProfile playerProjectileProfile = new(
