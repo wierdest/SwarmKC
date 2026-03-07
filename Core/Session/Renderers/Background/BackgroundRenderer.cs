@@ -24,11 +24,22 @@ public sealed class BackgroundRenderer(
     {
     }
 
-    public void Draw(float timeSeconds)
+    public void Draw(
+        float timeSeconds,
+        Vector2 wispScreenPos,
+        Vector2 playerAreaPos,
+        float playerAreaRadius,
+        Vector2 targetAreaPos,
+        float targetAreaRadius,
+        bool targetAreaIsOpen)
     {
         _shader.SetTime(timeSeconds);
         _shader.SetScreenSize(_graphicsDevice.Viewport.Width, _graphicsDevice.Viewport.Height);
-        
+        _shader.SetWispScreenPosition(wispScreenPos);
+        _shader.SetPlayerAreaLight(playerAreaPos, playerAreaRadius);
+        _shader.SetTargetAreaLight(targetAreaPos, targetAreaRadius);
+        _shader.SetTargetAreaOpenFactor(targetAreaIsOpen ? 1f : 0f);
+
         _spriteBatch.Begin(
             blendState: BlendState.Opaque,
             samplerState: SamplerState.LinearClamp,
@@ -61,6 +72,12 @@ public sealed class BackgroundRenderer(
             profile.LightingPower.Y);
 
         _shader.SetLightColor(profile.LightColor, profile.LightColorIntensity);
+        _shader.SetWispLightColor(profile.WispLightColor);
+        _shader.SetWispLightRadiusPx(profile.WispLightRadiusPx);
+        _shader.SetWispLightIntensity(profile.WispLightIntensity);
+        _shader.SetPlayerAreaLightColor(profile.PlayerAreaLightColor, profile.PlayerAreaLightIntensity);
+        _shader.SetTargetAreaOpenLightColor(profile.TargetAreaOpenLightColor, profile.TargetAreaOpenLightIntensity);
+        _shader.SetTargetAreaClosedLightColor(profile.TargetAreaClosedLightColor, profile.TargetAreaClosedLightIntensity);
     }
 
     public void Dispose()

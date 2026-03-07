@@ -20,8 +20,6 @@ public sealed class GameSessionRenderer(
    BackgroundRenderer backgroundRenderer,
    PlayerRenderer playerRenderer,
    ProjectilesRenderer projectilesRenderer,
-   PlayerAreaRenderer playerAreaRenderer,
-   TargetAreaRenderer targetAreaRenderer,
    float width,
    float height,
    int border) : IDisposable
@@ -34,8 +32,6 @@ public sealed class GameSessionRenderer(
     private readonly BackgroundRenderer _backgroundRenderer = backgroundRenderer;
     private readonly PlayerRenderer _playerRenderer = playerRenderer;
     private readonly ProjectilesRenderer _projectilesRenderer = projectilesRenderer;
-    private readonly PlayerAreaRenderer _playerAreaRenderer = playerAreaRenderer;
-    private readonly TargetAreaRenderer _targetAreaRenderer = targetAreaRenderer;
     private readonly Texture2D _pixel = pixel;
     private readonly Dictionary<int, Texture2D> _circleCache = [];
     private Rectangle _drawDestination;
@@ -55,10 +51,6 @@ public sealed class GameSessionRenderer(
             SymbolType: "heart"
         );
         _projectilesRenderer.ApplyPlayerProfile(playerProjectileProfile);
-        var playerAreaProfile = AreaProfiles.PlayerAreaLight;
-        _playerAreaRenderer.ApplyProfile(playerAreaProfile);
-        _targetAreaRenderer.ApplyProfile(AreaProfiles.TargetAreaLight);
-        _targetAreaRenderer.SetOpenBaseColor(playerAreaProfile.BaseColor);
         
     }
 
@@ -66,7 +58,14 @@ public sealed class GameSessionRenderer(
 
     public void Draw(GameSnapshot snap, float gameTime)
     {
-        _backgroundRenderer.Draw(gameTime);
+        _backgroundRenderer.Draw(
+            gameTime,
+            new Vector2(snap.Player.X, snap.Player.Y),
+            new Vector2(snap.PlayerArea.X, snap.PlayerArea.Y),
+            snap.PlayerArea.Radius,
+            new Vector2(snap.TargetArea.X, snap.TargetArea.Y),
+            snap.TargetArea.Radius,
+            snap.TargetAreaIsOpenToPlayer);
 
         _spriteBatch.Begin();
 
@@ -91,20 +90,6 @@ public sealed class GameSessionRenderer(
         DrawOverlayTextIfNeeded(snap);
 
         _spriteBatch.End();
-
-        var pa = snap.PlayerArea;
-        _playerAreaRenderer.Draw(
-            new Vector2(pa.X, pa.Y),
-            pa.Radius,
-            gameTime);
-
-        var ta = snap.TargetArea;
-        _targetAreaRenderer.Draw(
-            new Vector2(ta.X, ta.Y),
-            ta.Radius,
-            gameTime,
-            snap.TargetAreaIsOpenToPlayer
-        );
 
         DrawPlayer(
             new Vector2(snap.Player.X, snap.Player.Y),
