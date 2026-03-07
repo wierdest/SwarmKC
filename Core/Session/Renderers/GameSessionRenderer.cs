@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Swarm.Application.Contracts;
-using SwarmKC.Common.Graphics;
-using SwarmKC.Core.Session.Renderers.Areas;
 using SwarmKC.Core.Session.Renderers.Background;
 using SwarmKC.Core.Session.Renderers.Player;
 using SwarmKC.Core.Session.Renderers.Projectiles;
@@ -46,9 +44,8 @@ public sealed class GameSessionRenderer(
         PlayerProfile playerProfile = PlayerProfiles.Light;
         _playerRenderer.ApplyPlayerProfile(playerProfile);
         ProjectileProfile playerProjectileProfile = new(
-            SymbolColor: Color.White,
-            SymbolColorIntensity: 1.0f,
-            SymbolType: "heart"
+            ParticleColor: Color.LightCyan,
+            ParticleColorIntensity: 1.0f
         );
         _projectilesRenderer.ApplyPlayerProfile(playerProjectileProfile);
         

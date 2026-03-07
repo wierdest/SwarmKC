@@ -20,17 +20,11 @@
 /processorParam:TextureFormat=Compressed
 /build:DefaultFont.spritefont
 
-#begin Shaders/Symbol.fx
+#begin Shaders/LightParticle.fx
 /importer:EffectImporter
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
-/build:Shaders/Symbol.fx
-
-#begin Shaders/CilliatedCell.fx
-/importer:EffectImporter
-/processor:EffectProcessor
-/processorParam:DebugMode=Auto
-/build:Shaders/CilliatedCell.fx
+/build:Shaders/LightParticle.fx
 
 #begin Shaders/SideScrollOrganicCave.fx
 /importer:EffectImporter
@@ -43,4 +37,3 @@
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
 /build:Shaders/Wisp.fx
-
