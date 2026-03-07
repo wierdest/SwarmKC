@@ -4,51 +4,22 @@ namespace SwarmKC.Core.Session.Renderers.Player;
 
 public static class PlayerProfiles
 {
-    public static readonly PlayerProfile LightHeart = new(
-        BaseColor: Color.GhostWhite,
-        BaseColorIntensity: 0.7f,
-        NucleusColor: Color.SeaGreen,
-        NucleusColorIntensity: 0.35f,
-        SymbolColor: Color.HotPink,
-        SymbolColorIntensity: 0.95f,
-        SymbolType: "heart",
-        NeonLightColor: Color.HotPink,
-        NeonLightIntensity: 0.20f
+    public static readonly PlayerProfile Light = new(
+        BaseColor: Color.White,
+        BaseColorIntensity: 1.00f,
+        RadianceColor: Color.LightCyan,
+        RadianceColorIntensity: 0.95f,
+        ParticleCount: 14f,
+        ParticleSpeed: -0.5f
     );
 
-    public static readonly PlayerProfile DarkHeart = new(
-        BaseColor: Color.DarkBlue,
-        BaseColorIntensity: 0.78f,
-        NucleusColor: Color.DarkOrange,
-        NucleusColorIntensity: 0.60f,
-        SymbolColor: Color.DodgerBlue,
-        SymbolColorIntensity: 0.95f,
-        SymbolType: "heart",
-        NeonLightColor: Color.DeepSkyBlue,
-        NeonLightIntensity: 0.64f
-    );
+    public static readonly PlayerProfile Dark = new(
+        BaseColor: Color.AliceBlue,
+        BaseColorIntensity: 0.90f,
+        RadianceColor: Color.DeepSkyBlue,
+        RadianceColorIntensity: 1.10f,
+        ParticleCount: 18f,
+        ParticleSpeed: -0.5f
 
-    public static readonly PlayerProfile LightStar = new(
-        BaseColor: Color.GhostWhite,
-        BaseColorIntensity: 0.7f,
-        NucleusColor: Color.SeaGreen,
-        NucleusColorIntensity: 0.35f,
-        SymbolColor: Color.Gold,
-        SymbolColorIntensity: 0.95f,
-        SymbolType: "star",
-        NeonLightColor: Color.HotPink,
-        NeonLightIntensity: 0.20f
-    );
-
-    public static readonly PlayerProfile DarkStar = new(
-        BaseColor: Color.DarkBlue,
-        BaseColorIntensity: 0.78f,
-        NucleusColor: Color.DarkOrange,
-        NucleusColorIntensity: 0.60f,
-        SymbolColor: Color.LightSkyBlue,
-        SymbolColorIntensity: 0.95f,
-        SymbolType: "star",
-        NeonLightColor: Color.DeepSkyBlue,
-        NeonLightIntensity: 0.64f
     );
 }

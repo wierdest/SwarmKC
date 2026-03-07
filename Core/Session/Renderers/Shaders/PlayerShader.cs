@@ -7,7 +7,7 @@ namespace SwarmKC.Core.Session.Renderers.Shaders;
 
 public sealed class PlayerShader : IDisposable
 {
-    public const string DefaultAssetName = "Shaders/CilliatedCellWithSymbolNucleus";
+    public const string DefaultAssetName = "Shaders/Wisp";
 
     private readonly Effect _effect;
     public Effect Effect => _effect;
@@ -15,13 +15,13 @@ public sealed class PlayerShader : IDisposable
     private readonly EffectParameter _targetTexture;
     private readonly EffectParameter _time;
     private readonly EffectParameter _cellPosition;
-    private readonly EffectParameter _cellRadius;
+    private readonly EffectParameter _velocity;
+    private readonly EffectParameter _radius;
     private readonly EffectParameter _rotation;
-    private readonly EffectParameter _baseColor;
-    private readonly EffectParameter _nucleusColor;
-    private readonly EffectParameter _symbolColor;
-    private readonly EffectParameter _symbolType;
-    private readonly EffectParameter _neonLight;
+    private readonly EffectParameter _coreColor;
+    private readonly EffectParameter _radianceColor;
+    private readonly EffectParameter _particleCount;
+    private readonly EffectParameter _particleSpinSpeed;
 
     private readonly bool _ownsEffect;
 
@@ -33,13 +33,13 @@ public sealed class PlayerShader : IDisposable
         _targetTexture = GetRequiredParameter(_effect, "TargetTexture");
         _time = GetRequiredParameter(_effect, "Time");
         _cellPosition = GetRequiredParameter(_effect, "CellPosition");
-        _cellRadius = GetRequiredParameter(_effect, "CellRadius");
+        _velocity = GetRequiredParameter(_effect, "Velocity");
+        _radius = GetRequiredParameter(_effect, "Radius");
         _rotation = GetRequiredParameter(_effect, "Rotation");
-        _baseColor = GetRequiredParameter(_effect, "BaseColor");
-        _nucleusColor = GetRequiredParameter(_effect, "NucleusColor");
-        _symbolColor = GetRequiredParameter(_effect, "SymbolColor");
-        _symbolType = GetRequiredParameter(_effect, "SymbolType");
-        _neonLight = GetRequiredParameter(_effect, "NeonLight");
+        _coreColor = GetRequiredParameter(_effect, "CoreColor");
+        _radianceColor = GetRequiredParameter(_effect, "RadianceColor");
+        _particleCount = GetRequiredParameter(_effect, "ParticleCount");
+        _particleSpinSpeed = GetRequiredParameter(_effect, "ParticleSpinSpeed");
         _ownsEffect = cloneEffect;
     }
 
@@ -63,14 +63,19 @@ public sealed class PlayerShader : IDisposable
         _time.SetValue(seconds);
     }
 
-    public void SetCellPosition(Vector2 position)
+    public void SetPosition(Vector2 position)
     {
         _cellPosition.SetValue(position);
     }
 
-    public void SetCellRadius(float radius)
+    public void SetVelocity(Vector2 velocity)
     {
-        _cellRadius.SetValue(Math.Max(0f, radius));
+        _velocity.SetValue(velocity);
+    }
+
+    public void SetRadius(float radius)
+    {
+        _radius.SetValue(Math.Max(0f, radius));
     }
 
     public void SetRotation(float radians)
@@ -82,46 +87,24 @@ public sealed class PlayerShader : IDisposable
     {
         var v = color.ToVector4();
         v.W = Math.Max(0f, intensity);
-        _baseColor.SetValue(v);
+        _coreColor.SetValue(v);
     }
 
-    public void SetNucleusColor(Color color, float intensity = 1f)
+    public void SetRadianceColor(Color color, float intensity = 1f)
     {
         var v = color.ToVector4();
         v.W = Math.Max(0f, intensity);
-        _nucleusColor.SetValue(v);
+        _radianceColor.SetValue(v);
     }
 
-    public void SetSymbolColor(Color color, float intensity = 1f)
+    public void SetParticleCount(float count)
     {
-        var v = color.ToVector4();
-        v.W = Math.Max(0f, intensity);
-        _symbolColor.SetValue(v);
+        _particleCount.SetValue(Math.Clamp(count, 0f, 24f));
     }
 
-    public void SetSymbolType(string? symbolType)
+    public void SetParticleSpinSpeed(float speed)
     {
-        _symbolType.SetValue(SymbolTypeToValue(symbolType));
-    }
-
-    public void SetSymbolType(float symbolType)
-    {
-        _symbolType.SetValue(symbolType >= 0.5f ? 1f : 0f);
-    }
-
-    private static float SymbolTypeToValue(string? symbolType)
-    {
-        if (string.Equals(symbolType, "star", StringComparison.OrdinalIgnoreCase))
-            return 1f;
-
-        return 0f; // default: heart
-    }
-
-    public void SetNeonLight(Color color, float intensity = 1f)
-    {
-        var v = color.ToVector4();
-        v.W = Math.Max(0f, intensity);
-        _neonLight.SetValue(v);
+        _particleSpinSpeed.SetValue(speed);
     }
 
     private static EffectParameter GetRequiredParameter(Effect effect, string name)

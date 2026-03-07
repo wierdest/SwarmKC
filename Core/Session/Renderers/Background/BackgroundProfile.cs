@@ -14,5 +14,14 @@ public sealed record BackgroundProfile(
     Vector4 LightingStrength,
     Vector2 LightingPower,
     Color LightColor,
-    float LightColorIntensity
+    float LightColorIntensity,
+    Color WispLightColor,
+    float WispLightRadiusPx,
+    float WispLightIntensity,
+    Color PlayerAreaLightColor,
+    float PlayerAreaLightIntensity,
+    Color TargetAreaOpenLightColor,
+    float TargetAreaOpenLightIntensity,
+    Color TargetAreaClosedLightColor,
+    float TargetAreaClosedLightIntensity
 );

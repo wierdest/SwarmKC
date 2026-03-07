@@ -52,8 +52,7 @@ public sealed class ProjectilesRenderer(
             return;
         }
 
-        _shader.SetSymbolColor(profile.SymbolColor, profile.SymbolColorIntensity);
-        _shader.SetSymbolType(profile.SymbolType);
+        _shader.SetParticleColor(profile.ParticleColor, profile.ParticleColorIntensity);
 
         float safeRadius = Math.Max(0.5f, radius);
         int diameter = Math.Max(1, (int)MathF.Ceiling(safeRadius * 2f));
@@ -63,7 +62,7 @@ public sealed class ProjectilesRenderer(
 
         _shader.SetTexture(_pixel);
         _shader.SetTime(timeSeconds);
-        _shader.SetSymbolRadius(safeRadius);
+        _shader.SetParticleRadius(safeRadius);
         _shader.SetRotation(rotationRadians);
 
         _spriteBatch.Begin(

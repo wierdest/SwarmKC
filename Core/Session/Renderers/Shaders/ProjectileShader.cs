@@ -7,17 +7,16 @@ namespace SwarmKC.Core.Session.Renderers.Shaders;
 
 public sealed class ProjectileShader : IDisposable
 {
-    public const string DefaultAssetName = "Shaders/Symbol";
+    public const string DefaultAssetName = "Shaders/LightParticle";
 
     private readonly Effect _effect;
     public Effect Effect => _effect;
 
     private readonly EffectParameter _targetTexture;
     private readonly EffectParameter _time;
-    private readonly EffectParameter _symbolRadius;
+    private readonly EffectParameter _particleRadius;
     private readonly EffectParameter _rotation;
-    private readonly EffectParameter _symbolColor;
-    private readonly EffectParameter _symbolType;
+    private readonly EffectParameter _particleColor;
 
     private readonly bool _ownsEffect;
 
@@ -28,10 +27,9 @@ public sealed class ProjectileShader : IDisposable
         _effect = cloneEffect ? effect.Clone() : effect;
         _targetTexture = GetRequiredParameter(_effect, "TargetTexture");
         _time = GetRequiredParameter(_effect, "Time");
-        _symbolRadius = GetRequiredParameter(_effect, "SymbolRadius");
+        _particleRadius = GetRequiredParameter(_effect, "ParticleRadius");
         _rotation = GetRequiredParameter(_effect, "Rotation");
-        _symbolColor = GetRequiredParameter(_effect, "SymbolColor");
-        _symbolType = GetRequiredParameter(_effect, "SymbolType");
+        _particleColor = GetRequiredParameter(_effect, "ParticleColor");
         _ownsEffect = cloneEffect;
     }
 
@@ -55,9 +53,9 @@ public sealed class ProjectileShader : IDisposable
         _time.SetValue(seconds);
     }
 
-    public void SetSymbolRadius(float radius)
+    public void SetParticleRadius(float radius)
     {
-        _symbolRadius.SetValue(Math.Max(0f, radius));
+        _particleRadius.SetValue(Math.Max(0f, radius));
     }
 
     public void SetRotation(float radians)
@@ -65,29 +63,11 @@ public sealed class ProjectileShader : IDisposable
         _rotation.SetValue(radians);
     }
 
-    public void SetSymbolColor(Color color, float intensity = 1f)
+    public void SetParticleColor(Color color, float intensity = 1f)
     {
         var v = color.ToVector4();
         v.W = Math.Max(0f, intensity);
-        _symbolColor.SetValue(v);
-    }
-
-    public void SetSymbolType(string? symbolType)
-    {
-        _symbolType.SetValue(SymbolTypeToValue(symbolType));
-    }
-
-    public void SetSymbolType(float symbolType)
-    {
-        _symbolType.SetValue(symbolType >= 0.5f ? 1f : 0f);
-    }
-
-    private static float SymbolTypeToValue(string? symbolType)
-    {
-        if (string.Equals(symbolType, "star", StringComparison.OrdinalIgnoreCase))
-            return 1f;
-
-        return 0f; // default: heart
+        _particleColor.SetValue(v);
     }
 
     private static EffectParameter GetRequiredParameter(Effect effect, string name)

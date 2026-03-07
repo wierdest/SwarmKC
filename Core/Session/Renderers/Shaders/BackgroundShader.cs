@@ -12,7 +12,7 @@ public sealed class BackgroundShader : IDisposable
     private readonly Effect _effect;
     public Effect Effect => _effect;
 
-    private readonly EffectParameter _targetTexture;
+    private readonly EffectParameter? _targetTexture;
     private readonly EffectParameter _time;
     private readonly EffectParameter _surfaceColor;
     private readonly EffectParameter _fogColor;
@@ -23,6 +23,15 @@ public sealed class BackgroundShader : IDisposable
     private readonly EffectParameter _lightingStrength;
     private readonly EffectParameter _lightingPower;
     private readonly EffectParameter _lightColor;
+    private readonly EffectParameter _wispScreenPos;
+    private readonly EffectParameter _wispLightColor;
+    private readonly EffectParameter _wispLightParams;
+    private readonly EffectParameter _playerAreaLight;
+    private readonly EffectParameter _playerAreaLightColor;
+    private readonly EffectParameter _targetAreaLight;
+    private readonly EffectParameter _targetAreaOpenLightColor;
+    private readonly EffectParameter _targetAreaClosedLightColor;
+    private readonly EffectParameter _targetAreaOpenFactor;
 
     private readonly bool _ownsEffect;
 
@@ -42,6 +51,15 @@ public sealed class BackgroundShader : IDisposable
         _lightingStrength = GetRequiredParameter(_effect, "LightingStrength");
         _lightingPower = GetRequiredParameter(_effect, "LightingPower");
         _lightColor = GetRequiredParameter(_effect, "LightColor");
+        _wispScreenPos = GetRequiredParameter(_effect, "WispScreenPos");
+        _wispLightColor = GetRequiredParameter(_effect, "WispLightColor");
+        _wispLightParams = GetRequiredParameter(_effect, "WispLightParams");
+        _playerAreaLight = GetRequiredParameter(_effect, "PlayerAreaLight");
+        _playerAreaLightColor = GetRequiredParameter(_effect, "PlayerAreaLightColor");
+        _targetAreaLight = GetRequiredParameter(_effect, "TargetAreaLight");
+        _targetAreaOpenLightColor = GetRequiredParameter(_effect, "TargetAreaOpenLightColor");
+        _targetAreaClosedLightColor = GetRequiredParameter(_effect, "TargetAreaClosedLightColor");
+        _targetAreaOpenFactor = GetRequiredParameter(_effect, "TargetAreaOpenFactor");
 
         _ownsEffect = cloneEffect;
     }
@@ -58,7 +76,7 @@ public sealed class BackgroundShader : IDisposable
     public void SetTexture(Texture2D texture)
     {
         ArgumentNullException.ThrowIfNull(texture);
-        _targetTexture.SetValue(texture);
+        _targetTexture?.SetValue(texture);
     }
 
     public void SetTime(float seconds)
@@ -129,6 +147,69 @@ public sealed class BackgroundShader : IDisposable
         var v = color.ToVector4();
         v.W = Math.Max(0f, intensity);
         _lightColor.SetValue(v);
+    }
+
+    public void SetWispScreenPosition(Vector2 position)
+    {
+        _wispScreenPos.SetValue(position);
+    }
+
+    public void SetWispLightColor(Color color)
+    {
+        _wispLightColor.SetValue(color.ToVector4());
+    }
+
+    public void SetWispLight(float radiusPx, float intensity)
+    {
+        _wispLightParams.SetValue(new Vector2(Math.Max(1f, radiusPx), Math.Max(0f, intensity)));
+    }
+
+    public void SetWispLightRadiusPx(float radiusPx)
+    {
+        Vector2 current = _wispLightParams.GetValueVector2();
+        _wispLightParams.SetValue(new Vector2(Math.Max(1f, radiusPx), current.Y));
+    }
+
+    public void SetWispLightIntensity(float intensity)
+    {
+        Vector2 current = _wispLightParams.GetValueVector2();
+        _wispLightParams.SetValue(new Vector2(current.X, Math.Max(0f, intensity)));
+    }
+
+    public void SetPlayerAreaLight(Vector2 position, float radiusPx)
+    {
+        _playerAreaLight.SetValue(new Vector3(position, Math.Max(1f, radiusPx)));
+    }
+
+    public void SetPlayerAreaLightColor(Color color, float intensity = 1f)
+    {
+        var v = color.ToVector4();
+        v.W = Math.Max(0f, intensity);
+        _playerAreaLightColor.SetValue(v);
+    }
+
+    public void SetTargetAreaLight(Vector2 position, float radiusPx)
+    {
+        _targetAreaLight.SetValue(new Vector3(position, Math.Max(1f, radiusPx)));
+    }
+
+    public void SetTargetAreaOpenLightColor(Color color, float intensity = 1f)
+    {
+        var v = color.ToVector4();
+        v.W = Math.Max(0f, intensity);
+        _targetAreaOpenLightColor.SetValue(v);
+    }
+
+    public void SetTargetAreaClosedLightColor(Color color, float intensity = 1f)
+    {
+        var v = color.ToVector4();
+        v.W = Math.Max(0f, intensity);
+        _targetAreaClosedLightColor.SetValue(v);
+    }
+
+    public void SetTargetAreaOpenFactor(float value)
+    {
+        _targetAreaOpenFactor.SetValue(Math.Clamp(value, 0f, 1f));
     }
 
     private static EffectParameter GetRequiredParameter(Effect effect, string name)

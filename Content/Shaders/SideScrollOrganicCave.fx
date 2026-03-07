@@ -38,6 +38,15 @@ extern float3 LightDirection;
 extern float4 LightingStrength; // x=ambient y=diffuse z=specular w=rim
 extern float2 LightingPower;    // x=specularPower, y=rimPower
 extern float4 LightColor;       // rgb=color a=intensity
+extern float2 WispScreenPos;    // screen-space pixels
+extern float4 WispLightColor;   // rgb=color
+extern float2 WispLightParams;  // x=radiusPx y=intensity
+extern float3 PlayerAreaLight;            // x=screenX, y=screenY, z=radiusPx
+extern float4 PlayerAreaLightColor;       // rgb=color a=intensity
+extern float3 TargetAreaLight;            // x=screenX, y=screenY, z=radiusPx
+extern float4 TargetAreaOpenLightColor;   // rgb=color a=intensity
+extern float4 TargetAreaClosedLightColor; // rgb=color a=intensity
+extern float TargetAreaOpenFactor;        // 0=closed, 1=open
 
 static const float2 HASH21_SEED = float2(127.1, 311.7);
 static const float HASH21_SCALE = 43758.5453123;
@@ -280,6 +289,31 @@ float4 MainPS(VertexShaderOutput input) : COLOR
 
     float vignette = saturate(1.0 - length(uv * float2(0.86, 1.04)));
     color *= lerp(0.55, 1.0, vignette);
+
+    // Screen-space light halo that follows the player/wisp.
+    float2 fragPx = input.TextureCoordinates * resolution;
+    float2 toWisp = fragPx - WispScreenPos;
+    float wispRadius = max(1.0, WispLightParams.x);
+    float wispIntensity = max(0.0, WispLightParams.y);
+    float falloff = exp(-dot(toWisp, toWisp) / (2.0 * wispRadius * wispRadius));
+    float core = exp(-dot(toWisp, toWisp) / (2.0 * (wispRadius * 0.28) * (wispRadius * 0.28)));
+    float wispMask = saturate(falloff * 0.9 + core * 0.65) * wispIntensity;
+    color += saturate(WispLightColor.rgb) * wispMask;
+
+    // Player area luminescence.
+    float2 toPlayerArea = fragPx - PlayerAreaLight.xy;
+    float paRadius = max(1.0, PlayerAreaLight.z);
+    float paI = max(0.0, PlayerAreaLightColor.a);
+    float paMask = exp(-dot(toPlayerArea, toPlayerArea) / (2.0 * paRadius * paRadius)) * paI;
+    color += saturate(PlayerAreaLightColor.rgb) * paMask;
+
+    // Target area luminescence (open/closed blend).
+    float2 toTargetArea = fragPx - TargetAreaLight.xy;
+    float taRadius = max(1.0, TargetAreaLight.z);
+    float4 taColor = lerp(TargetAreaClosedLightColor, TargetAreaOpenLightColor, saturate(TargetAreaOpenFactor));
+    float taI = max(0.0, taColor.a);
+    float taMask = exp(-dot(toTargetArea, toTargetArea) / (2.0 * taRadius * taRadius)) * taI;
+    color += saturate(taColor.rgb) * taMask;
 
     return float4(saturate(color), 1.0);
 }
