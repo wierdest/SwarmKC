@@ -26,7 +26,6 @@ public sealed class BackgroundRenderer(
 
     public void Draw(float timeSeconds)
     {
-        _shader.SetTexture(_pixel);
         _shader.SetTime(timeSeconds);
         _shader.SetScreenSize(_graphicsDevice.Viewport.Width, _graphicsDevice.Viewport.Height);
         

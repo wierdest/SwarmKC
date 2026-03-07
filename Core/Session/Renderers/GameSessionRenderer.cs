@@ -47,12 +47,12 @@ public sealed class GameSessionRenderer(
     {
         RecalculateDestination();
         _backgroundRenderer.ApplyBackgroundProfile(BackgroundProfiles.Dark);
-        PlayerProfile playerProfile = PlayerProfiles.LightHeart;
+        PlayerProfile playerProfile = PlayerProfiles.Light;
         _playerRenderer.ApplyPlayerProfile(playerProfile);
         ProjectileProfile playerProjectileProfile = new(
-            SymbolColor: playerProfile.SymbolColor,
-            SymbolColorIntensity: playerProfile.SymbolColorIntensity,
-            SymbolType: playerProfile.SymbolType
+            SymbolColor: Color.White,
+            SymbolColorIntensity: 1.0f,
+            SymbolType: "heart"
         );
         _projectilesRenderer.ApplyPlayerProfile(playerProjectileProfile);
         var playerAreaProfile = AreaProfiles.PlayerAreaLight;

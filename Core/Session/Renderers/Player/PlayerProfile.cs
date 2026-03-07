@@ -5,11 +5,8 @@ namespace SwarmKC.Core.Session.Renderers.Player;
 public sealed record PlayerProfile(
     Color BaseColor,
     float BaseColorIntensity,
-    Color NucleusColor,
-    float NucleusColorIntensity,
-    Color SymbolColor,
-    float SymbolColorIntensity,
-    string SymbolType,
-    Color NeonLightColor,
-    float NeonLightIntensity
+    Color RadianceColor,
+    float RadianceColorIntensity,
+    float ParticleCount,
+    float ParticleSpeed
 );

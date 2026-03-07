@@ -16,6 +16,9 @@ public sealed class PlayerRenderer(
     private readonly PlayerShader _shader = shader ?? throw new ArgumentNullException(nameof(shader));
     private readonly bool _ownsShader = ownsShader;
     private readonly Texture2D _pixel = pixel;
+    private Vector2 _lastPosition;
+    private float _lastTimeSeconds;
+    private bool _hasLastFrame;
 
     public PlayerRenderer(SpriteBatch spriteBatch, ContentManager content, Texture2D pixel)
         : this(spriteBatch, PlayerShader.Load(content), pixel, ownsShader: true)
@@ -26,10 +29,14 @@ public sealed class PlayerRenderer(
     {
         ArgumentNullException.ThrowIfNull(profile);
         _shader.SetBaseColor(profile.BaseColor, profile.BaseColorIntensity);
-        _shader.SetNucleusColor(profile.NucleusColor, profile.NucleusColorIntensity);
-        _shader.SetSymbolColor(profile.SymbolColor, profile.SymbolColorIntensity);
-        _shader.SetSymbolType(profile.SymbolType);
-        _shader.SetNeonLight(profile.NeonLightColor, profile.NeonLightIntensity);
+        _shader.SetRadianceColor(profile.RadianceColor, profile.RadianceColorIntensity);
+        _shader.SetParticleCount(profile.ParticleCount);
+        _shader.SetParticleSpinSpeed(profile.ParticleSpeed);
+    }
+
+    public void SetParticleCount(float count)
+    {
+        _shader.SetParticleCount(count);
     }
 
     public void Draw(Vector2 position, float radius, float rotationRadians, float timeSeconds)
@@ -42,9 +49,10 @@ public sealed class PlayerRenderer(
 
         _shader.SetTexture(_pixel);
         _shader.SetTime(timeSeconds);
-        _shader.SetCellPosition(position);
-        _shader.SetCellRadius(safeRadius);
+        _shader.SetPosition(position);
+        _shader.SetRadius(safeRadius);
         _shader.SetRotation(rotationRadians);
+        _shader.SetVelocity(ComputeVelocity(position, timeSeconds));
 
         _spriteBatch.Begin(
             blendState: BlendState.AlphaBlend,
@@ -55,6 +63,30 @@ public sealed class PlayerRenderer(
 
         _spriteBatch.Draw(_pixel, destination, Color.White);
         _spriteBatch.End();
+    }
+
+    private Vector2 ComputeVelocity(Vector2 position, float timeSeconds)
+    {
+        if (!_hasLastFrame)
+        {
+            _lastPosition = position;
+            _lastTimeSeconds = timeSeconds;
+            _hasLastFrame = true;
+            return Vector2.Zero;
+        }
+
+        float dt = timeSeconds - _lastTimeSeconds;
+        if (dt <= 0.0001f || dt > 0.25f)
+        {
+            _lastPosition = position;
+            _lastTimeSeconds = timeSeconds;
+            return Vector2.Zero;
+        }
+
+        Vector2 velocity = (position - _lastPosition) / dt;
+        _lastPosition = position;
+        _lastTimeSeconds = timeSeconds;
+        return velocity;
     }
 
     public void Dispose()

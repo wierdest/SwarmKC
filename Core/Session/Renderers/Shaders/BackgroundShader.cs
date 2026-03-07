@@ -12,7 +12,7 @@ public sealed class BackgroundShader : IDisposable
     private readonly Effect _effect;
     public Effect Effect => _effect;
 
-    private readonly EffectParameter _targetTexture;
+    private readonly EffectParameter? _targetTexture;
     private readonly EffectParameter _time;
     private readonly EffectParameter _surfaceColor;
     private readonly EffectParameter _fogColor;
@@ -58,7 +58,7 @@ public sealed class BackgroundShader : IDisposable
     public void SetTexture(Texture2D texture)
     {
         ArgumentNullException.ThrowIfNull(texture);
-        _targetTexture.SetValue(texture);
+        _targetTexture?.SetValue(texture);
     }
 
     public void SetTime(float seconds)
